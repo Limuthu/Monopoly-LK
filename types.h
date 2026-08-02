@@ -85,6 +85,7 @@ typedef struct {
   int position;
   int in_jail;
   int jail_turns;
+  int roll_result;
 } Player;
 
 typedef struct {
