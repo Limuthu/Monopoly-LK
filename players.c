@@ -48,15 +48,30 @@ void init_players(GameState *game) {
 }
 
 void roll_for_order(GameState *game) {
-  srand((unsigned int)time(NULL)); // Seed RNG so rolls differ each run
+  srand((unsigned int)time(NULL));
   for (int i = 0; i < game->num_players; i++) {
     int dice = ((rand() % 6) + 1) + ((rand() % 6) + 1);
     game->players[i].roll_result = dice;
-    // printf("Player %d rolled a %d\n", i + 1, game->players[i].roll_result);
   }
 }
 
-void sort_players(GameState *game) {
+void reroll(Player *p1) {
+  int dice = ((rand() % 6) + 1) + ((rand() % 6) + 1);
+  p1->roll_result = dice;
+}
+
+int has_tie(GameState *game) {
+  for (int i = 0; i < game->num_players - 1; i++) {
+    if (game->players[i].roll_result == game->players[i + 1].roll_result) {
+      printf("\nTie Between:\n%s & %s\n", game->players[i].name,
+             game->players[i + 1].name);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+void bubble_sort(GameState *game) {
   Player temp;
   for (int i = 0; i < game->num_players - 1; i++) {
     for (int j = 0; j < game->num_players - i - 1; j++) {
@@ -66,5 +81,24 @@ void sort_players(GameState *game) {
         game->players[j + 1] = temp;
       }
     }
+  }
+}
+
+void sort_players(GameState *game) {
+  bubble_sort(game);
+  while (has_tie(game)) {
+
+    for (int i = 0; i < game->num_players - 1; i++) {
+      if (game->players[i].roll_result == game->players[i + 1].roll_result) {
+        reroll(&game->players[i]);
+        printf("\n");
+        printf("%s re-rolls %d\n", game->players[i].name,
+               game->players[i].roll_result);
+        reroll(&game->players[i + 1]);
+        printf("%s re-rolls %d\n", game->players[i + 1].name,
+               game->players[i + 1].roll_result);
+      }
+    }
+    bubble_sort(game);
   }
 }
