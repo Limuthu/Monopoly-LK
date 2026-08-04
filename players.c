@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+// PLAYER INITIALIZATION
+
 void init_players(GameState *game) {
 
   game->num_players = 4;
@@ -47,8 +49,9 @@ void init_players(GameState *game) {
   game->players[3].roll_result = 0;
 }
 
+// DICE ROLL
+
 void roll_for_order(GameState *game) {
-  srand((unsigned int)time(NULL));
   for (int i = 0; i < game->num_players; i++) {
     int dice = ((rand() % 6) + 1) + ((rand() % 6) + 1);
     game->players[i].roll_result = dice;
@@ -63,8 +66,8 @@ void reroll(Player *p1) {
 int has_tie(GameState *game) {
   for (int i = 0; i < game->num_players - 1; i++) {
     if (game->players[i].roll_result == game->players[i + 1].roll_result) {
-      printf("\nTie Between:\n%s & %s\n", game->players[i].name,
-             game->players[i + 1].name);
+      /* printf("\nTie Between:\n%s & %s\n", game->players[i].name,
+              game->players[i + 1].name);*/
       return 1;
     }
   }
@@ -100,5 +103,25 @@ void sort_players(GameState *game) {
       }
     }
     bubble_sort(game);
+  }
+}
+
+// Player Movements
+
+int roll_dice() {
+  int dice1 = ((rand() % 6) + 1);
+  int dice2 = ((rand() % 6) + 1);
+  return dice1 + dice2;
+}
+
+void move_player(GameState *game, int player_index, int dice_roll) {
+  int current_position = game->players[player_index].position;
+  int new_position = (current_position + dice_roll) % TOTAL_SQUARES;
+  game->players[player_index].position = new_position;
+  printf("%s moves from %s to %s (position %d)\n",
+         game->players[player_index].name, game->board[current_position].name,
+         game->board[new_position].name, game->players[player_index].position);
+  if (current_position > new_position) {
+    printf("%s has passed Go\n", game->players[player_index].name);
   }
 }
