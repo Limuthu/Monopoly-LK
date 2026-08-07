@@ -11,6 +11,7 @@ void sort_players(GameState *game);
 int has_tie(GameState *game);
 int roll_dice();
 void move_player(GameState *game, int player_index, int dice_roll);
+void handle_landing(GameState *game, int player_position);
 
 int main(void) {
   GameState game;
@@ -47,12 +48,17 @@ int main(void) {
 
   //--------------------PLAYER MOVEMENTS--------------------
   int j = 0;
-  while (j < 3) {
+  while (j < 20) {
     printf("---Round %d---\n", j + 1);
     for (int i = 0; i < game.num_players; i++) {
       int dice_roll = roll_dice();
       printf("%s rolled : %d\n", game.players[i].name, dice_roll);
       move_player(&game, i, dice_roll);
+
+      //--------------------PLAYER LANDING--------------------
+
+      handle_landing(&game, game.players[i].position);
+      printf("\n");
     }
     game.current_turn = game.current_turn + 1;
     j++;
