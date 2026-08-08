@@ -71,6 +71,7 @@ typedef struct {
   int index;
   char name[60];
   SquareType type;
+  int owner_id;
   union {
     PropertyData property;
     RailwayData railway;

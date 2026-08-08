@@ -125,3 +125,78 @@ void move_player(GameState *game, int player_index, int dice_roll) {
     printf("%s has passed Go\n", game->players[player_index].name);
   }
 }
+
+// Buy Decision
+
+void purchase_property(GameState *game, int player_index, int square_index);
+
+// Helpers
+int count_owned_in_group(GameState *game, int player_id, int square_index);
+int group_size(GameState *game, int square_index);
+
+int should_buy(GameState *game, int player_id, int square_index) {
+
+  int player_index = player_id - 1;
+
+  // Risk Taker
+  if (player_id == 3) {
+
+    // buys every property he lands on
+
+    if (game->players[player_index].money >=
+        game->board[square_index].data.property.price) {
+      purchase_property(game, player_index, square_index);
+    }
+
+    // Conservative Banker
+  } else if (player_id == 2) {
+
+    // Purchases properties only if at least 50% of current cash remains after
+    // purchase
+
+    if (game->board[square_index].data.property.price <=
+        game->players[player_index].money * 0.5) {
+      purchase_property(game, player_index, square_index);
+    }
+
+    // Aggressive Investor
+  } else if (player_id == 1) {
+
+    // Owned property count in landed group
+    int owned = count_owned_in_group(game, player_id, square_index);
+
+    // Property count in each group
+    int size = group_size(game, square_index);
+
+    // if funds aren't remain to pay at least one future rent exit
+    // Priority 1 : If he has only one property to buy to complete a color
+    // Priority 2 : If he has started completing a color
+    // Priority 3 : Purchase if the group is DARK BLUE
+    // If not always purchase if all are okay
+
+    if (game->players[player_index].money -
+            game->board[square_index].data.property.price <
+        100) {
+      printf("%s cannot afford to buy this property (Future rent covering "
+             "mindset)\n",
+             game->players[player_index].name);
+
+    } else if (owned + 1 == size) {
+      purchase_property(game, player_index, square_index);
+
+    } else if (owned >= 1) {
+      purchase_property(game, player_index, square_index);
+
+    } else if (game->board[square_index].data.property.group ==
+               GROUP_DARK_BLUE) {
+      purchase_property(game, player_index, square_index);
+
+    } else {
+      purchase_property(game, player_index, square_index);
+    }
+
+    // Opportunistic Trader
+  } else if (player_id == 4) {
+  }
+  return 0;
+}

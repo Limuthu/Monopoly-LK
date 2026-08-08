@@ -3,6 +3,11 @@
 #include <string.h>
 
 void init_board(GameState *game) {
+
+  for (int i = 0; i < 40; i++) {
+    game->board[i].owner_id = -1;
+  }
+
   // -------------------------------------------------------------
   // Index 0: GO
   // -------------------------------------------------------------
@@ -18,6 +23,7 @@ void init_board(GameState *game) {
   strcpy(game->board[1].name, "Pettah");
   game->board[1].data.property.group = GROUP_BROWN;
   game->board[1].data.property.price = 1500;
+  game->board[1].data.property.base_rent = 100;
   game->board[1].data.property.mortgage_value = 750;
   game->board[1].data.property.house_cost = 500;
   game->board[1].data.property.hotel_cost = 2000;
@@ -41,7 +47,8 @@ void init_board(GameState *game) {
   game->board[3].type = SQUARE_PROPERTY;
   strcpy(game->board[3].name, "Maradana");
   game->board[3].data.property.group = GROUP_BROWN;
-  game->board[3].data.property.price = 1500;
+  game->board[3].data.property.price = 1800;
+  game->board[3].data.property.base_rent = 120;
   game->board[3].data.property.mortgage_value = 750;
   game->board[3].data.property.house_cost = 500;
   game->board[3].data.property.hotel_cost = 2000;
@@ -76,6 +83,7 @@ void init_board(GameState *game) {
   strcpy(game->board[6].name, "Bambalapitiya");
   game->board[6].data.property.group = GROUP_LIGHT_BLUE;
   game->board[6].data.property.price = 2500;
+  game->board[6].data.property.base_rent = 180;
   game->board[6].data.property.mortgage_value = 1250;
   game->board[6].data.property.house_cost = 750;
   game->board[6].data.property.hotel_cost = 3000;
@@ -99,7 +107,8 @@ void init_board(GameState *game) {
   game->board[8].type = SQUARE_PROPERTY;
   strcpy(game->board[8].name, "Wellawatte");
   game->board[8].data.property.group = GROUP_LIGHT_BLUE;
-  game->board[8].data.property.price = 2500;
+  game->board[8].data.property.price = 2700;
+  game->board[8].data.property.base_rent = 200;
   game->board[8].data.property.mortgage_value = 1250;
   game->board[8].data.property.house_cost = 750;
   game->board[8].data.property.hotel_cost = 3000;
@@ -116,7 +125,8 @@ void init_board(GameState *game) {
   game->board[9].type = SQUARE_PROPERTY;
   strcpy(game->board[9].name, "Mount Lavinia");
   game->board[9].data.property.group = GROUP_LIGHT_BLUE;
-  game->board[9].data.property.price = 2500;
+  game->board[9].data.property.price = 3000;
+  game->board[9].data.property.base_rent = 220;
   game->board[9].data.property.mortgage_value = 1250;
   game->board[9].data.property.house_cost = 750;
   game->board[9].data.property.hotel_cost = 3000;
@@ -141,6 +151,7 @@ void init_board(GameState *game) {
   strcpy(game->board[11].name, "Nugegoda");
   game->board[11].data.property.group = GROUP_PINK;
   game->board[11].data.property.price = 3500;
+  game->board[11].data.property.base_rent = 260;
   game->board[11].data.property.mortgage_value = 1750;
   game->board[11].data.property.house_cost = 1000;
   game->board[11].data.property.hotel_cost = 4000;
@@ -167,7 +178,8 @@ void init_board(GameState *game) {
   game->board[13].type = SQUARE_PROPERTY;
   strcpy(game->board[13].name, "Maharagama");
   game->board[13].data.property.group = GROUP_PINK;
-  game->board[13].data.property.price = 3500;
+  game->board[13].data.property.price = 3800;
+  game->board[13].data.property.base_rent = 280;
   game->board[13].data.property.mortgage_value = 1750;
   game->board[13].data.property.house_cost = 1000;
   game->board[13].data.property.hotel_cost = 4000;
@@ -184,7 +196,8 @@ void init_board(GameState *game) {
   game->board[14].type = SQUARE_PROPERTY;
   strcpy(game->board[14].name, "Kottawa");
   game->board[14].data.property.group = GROUP_PINK;
-  game->board[14].data.property.price = 3500;
+  game->board[14].data.property.price = 4000;
+  game->board[14].data.property.base_rent = 300;
   game->board[14].data.property.mortgage_value = 1750;
   game->board[14].data.property.house_cost = 1000;
   game->board[14].data.property.hotel_cost = 4000;
@@ -212,6 +225,7 @@ void init_board(GameState *game) {
   strcpy(game->board[16].name, "Negombo");
   game->board[16].data.property.group = GROUP_ORANGE;
   game->board[16].data.property.price = 4500;
+  game->board[16].data.property.base_rent = 350;
   game->board[16].data.property.mortgage_value = 2250;
   game->board[16].data.property.house_cost = 1250;
   game->board[16].data.property.hotel_cost = 5000;
@@ -235,7 +249,8 @@ void init_board(GameState *game) {
   game->board[18].type = SQUARE_PROPERTY;
   strcpy(game->board[18].name, "Katunayake");
   game->board[18].data.property.group = GROUP_ORANGE;
-  game->board[18].data.property.price = 4500;
+  game->board[18].data.property.price = 4700;
+  game->board[18].data.property.base_rent = 370;
   game->board[18].data.property.mortgage_value = 2250;
   game->board[18].data.property.house_cost = 1250;
   game->board[18].data.property.hotel_cost = 5000;
@@ -252,7 +267,8 @@ void init_board(GameState *game) {
   game->board[19].type = SQUARE_PROPERTY;
   strcpy(game->board[19].name, "Ja-Ela");
   game->board[19].data.property.group = GROUP_ORANGE;
-  game->board[19].data.property.price = 4500;
+  game->board[19].data.property.price = 5000;
+  game->board[19].data.property.base_rent = 400;
   game->board[19].data.property.mortgage_value = 2250;
   game->board[19].data.property.house_cost = 1250;
   game->board[19].data.property.hotel_cost = 5000;
@@ -277,6 +293,7 @@ void init_board(GameState *game) {
   strcpy(game->board[21].name, "Kandy City");
   game->board[21].data.property.group = GROUP_RED;
   game->board[21].data.property.price = 5500;
+  game->board[21].data.property.base_rent = 450;
   game->board[21].data.property.mortgage_value = 2750;
   game->board[21].data.property.house_cost = 1500;
   game->board[21].data.property.hotel_cost = 6000;
@@ -300,7 +317,8 @@ void init_board(GameState *game) {
   game->board[23].type = SQUARE_PROPERTY;
   strcpy(game->board[23].name, "Peradeniya");
   game->board[23].data.property.group = GROUP_RED;
-  game->board[23].data.property.price = 5500;
+  game->board[23].data.property.price = 5800;
+  game->board[23].data.property.base_rent = 480;
   game->board[23].data.property.mortgage_value = 2750;
   game->board[23].data.property.house_cost = 1500;
   game->board[23].data.property.hotel_cost = 6000;
@@ -317,7 +335,8 @@ void init_board(GameState *game) {
   game->board[24].type = SQUARE_PROPERTY;
   strcpy(game->board[24].name, "Katugastota");
   game->board[24].data.property.group = GROUP_RED;
-  game->board[24].data.property.price = 5500;
+  game->board[24].data.property.price = 6000;
+  game->board[24].data.property.base_rent = 500;
   game->board[24].data.property.mortgage_value = 2750;
   game->board[24].data.property.house_cost = 1500;
   game->board[24].data.property.hotel_cost = 6000;
@@ -345,6 +364,7 @@ void init_board(GameState *game) {
   strcpy(game->board[26].name, "Galle Fort");
   game->board[26].data.property.group = GROUP_YELLOW;
   game->board[26].data.property.price = 6500;
+  game->board[26].data.property.base_rent = 600;
   game->board[26].data.property.mortgage_value = 3250;
   game->board[26].data.property.house_cost = 2000;
   game->board[26].data.property.hotel_cost = 8000;
@@ -361,7 +381,8 @@ void init_board(GameState *game) {
   game->board[27].type = SQUARE_PROPERTY;
   strcpy(game->board[27].name, "Unawatuna");
   game->board[27].data.property.group = GROUP_YELLOW;
-  game->board[27].data.property.price = 6500;
+  game->board[27].data.property.price = 6800;
+  game->board[27].data.property.base_rent = 620;
   game->board[27].data.property.mortgage_value = 3250;
   game->board[27].data.property.house_cost = 2000;
   game->board[27].data.property.hotel_cost = 8000;
@@ -388,7 +409,8 @@ void init_board(GameState *game) {
   game->board[29].type = SQUARE_PROPERTY;
   strcpy(game->board[29].name, "Hikkaduwa");
   game->board[29].data.property.group = GROUP_YELLOW;
-  game->board[29].data.property.price = 6500;
+  game->board[29].data.property.price = 7000;
+  game->board[29].data.property.base_rent = 650;
   game->board[29].data.property.mortgage_value = 3250;
   game->board[29].data.property.house_cost = 2000;
   game->board[29].data.property.hotel_cost = 8000;
@@ -413,6 +435,7 @@ void init_board(GameState *game) {
   strcpy(game->board[31].name, "Jaffna Town");
   game->board[31].data.property.group = GROUP_GREEN;
   game->board[31].data.property.price = 8000;
+  game->board[31].data.property.base_rent = 750;
   game->board[31].data.property.mortgage_value = 4000;
   game->board[31].data.property.house_cost = 2500;
   game->board[31].data.property.hotel_cost = 10000;
@@ -429,7 +452,8 @@ void init_board(GameState *game) {
   game->board[32].type = SQUARE_PROPERTY;
   strcpy(game->board[32].name, "Nallur");
   game->board[32].data.property.group = GROUP_GREEN;
-  game->board[32].data.property.price = 8000;
+  game->board[32].data.property.price = 8300;
+  game->board[32].data.property.base_rent = 780;
   game->board[32].data.property.mortgage_value = 4000;
   game->board[32].data.property.house_cost = 2500;
   game->board[32].data.property.hotel_cost = 10000;
@@ -453,7 +477,8 @@ void init_board(GameState *game) {
   game->board[34].type = SQUARE_PROPERTY;
   strcpy(game->board[34].name, "Trincomalee");
   game->board[34].data.property.group = GROUP_GREEN;
-  game->board[34].data.property.price = 8000;
+  game->board[34].data.property.price = 8500;
+  game->board[34].data.property.base_rent = 800;
   game->board[34].data.property.mortgage_value = 4000;
   game->board[34].data.property.house_cost = 2500;
   game->board[34].data.property.hotel_cost = 10000;
@@ -488,6 +513,7 @@ void init_board(GameState *game) {
   strcpy(game->board[37].name, "Nuwara Eliya");
   game->board[37].data.property.group = GROUP_DARK_BLUE;
   game->board[37].data.property.price = 10000;
+  game->board[37].data.property.base_rent = 1000;
   game->board[37].data.property.mortgage_value = 5000;
   game->board[37].data.property.house_cost = 3000;
   game->board[37].data.property.hotel_cost = 12000;
@@ -511,7 +537,8 @@ void init_board(GameState *game) {
   game->board[39].type = SQUARE_PROPERTY;
   strcpy(game->board[39].name, "Galle Face");
   game->board[39].data.property.group = GROUP_DARK_BLUE;
-  game->board[39].data.property.price = 10000;
+  game->board[39].data.property.price = 12000;
+  game->board[39].data.property.base_rent = 1200;
   game->board[39].data.property.mortgage_value = 5000;
   game->board[39].data.property.house_cost = 3000;
   game->board[39].data.property.hotel_cost = 12000;
