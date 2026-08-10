@@ -1,7 +1,7 @@
 #include "types.h"
 #include <stdio.h>
 
-// Property buying mindsets
+
 int count_owned_in_group(GameState *game, int player_id, int square_index) {
   PropertyGroup group = game->board[square_index].data.property.group;
 

@@ -136,7 +136,16 @@ int group_size(GameState *game, int square_index);
 
 int should_buy(GameState *game, int player_id, int square_index) {
 
-  int player_index = player_id - 1;
+  
+  int player_index = -1;
+  for (int i = 0; i < game->num_players; i++) {
+    if (game->players[i].id == player_id) {
+      player_index = i;
+      break;
+    }
+  }
+  if (player_index == -1) return 0; 
+
 
   // Risk Taker
   if (player_id == 3) {
@@ -146,17 +155,20 @@ int should_buy(GameState *game, int player_id, int square_index) {
     if (game->players[player_index].money >=
         game->board[square_index].data.property.price) {
       purchase_property(game, player_index, square_index);
+    }else if(game->players[player_index].money < game->board[square_index].data.property.price) {
+      printf("%s cannot afford to buy this property\n", game->players[player_index].name);
     }
 
     // Conservative Banker
   } else if (player_id == 2) {
 
-    // Purchases properties only if at least 50% of current cash remains after
-    // purchase
+    // Purchases properties only if at least 50% of current cash remains after purchase
 
     if (game->board[square_index].data.property.price <=
         game->players[player_index].money * 0.5) {
       purchase_property(game, player_index, square_index);
+    }else if(game->board[square_index].data.property.price > game->players[player_index].money * 0.5){
+      printf("%s cannot afford to buy this property\n", game->players[player_index].name);
     }
 
     // Aggressive Investor
@@ -187,8 +199,7 @@ int should_buy(GameState *game, int player_id, int square_index) {
     } else if (owned >= 1) {
       purchase_property(game, player_index, square_index);
 
-    } else if (game->board[square_index].data.property.group ==
-               GROUP_DARK_BLUE) {
+    } else if (game->board[square_index].data.property.group == GROUP_DARK_BLUE) {
       purchase_property(game, player_index, square_index);
 
     } else {
@@ -197,6 +208,45 @@ int should_buy(GameState *game, int player_id, int square_index) {
 
     // Opportunistic Trader
   } else if (player_id == 4) {
+    
+    // Owned property count in landed group
+    int owned = count_owned_in_group(game, player_id, square_index);
+
+    // Property count in each group
+    int size = group_size(game, square_index);
+
+    // Auction preference: bid only if auction price is below listed market
+    // value (i.e., the property went to auction at a discount). This is the
+    // core opportunistic behaviour — never overpay, always exploit undervalued
+    // lots.
+
+    // Priority 1 : Cannot afford (must keep a cash reserve >= 500 after
+    //              purchase to cover future rents) → skip
+    // Priority 2 : ROI is bad (base_rent / price < 7%) → skip
+    // Priority 3 : One property away from completing the color group → buy
+    // Priority 4 : Already owns 2+ properties in the group → buy
+    // Priority 5 : Property is too expensive (price > 5000) and none of the
+    //              above conditions apply → skip
+    // Priority 6 : Default — buy anything reasonably priced
+
+    if (game->players[player_index].money - game->board[square_index].data.property.price < 500) {
+      printf("%s cannot afford to buy this property (reserve mindset)\n", game->players[player_index].name);
+    
+    } else if (game->board[square_index].data.property.base_rent * 100 < game->board[square_index].data.property.price * 7) {
+      printf("%s skips: ROI is bad (rent/price ratio too low)\n", game->players[player_index].name);
+    
+    } else if (owned + 1 == size) {
+      purchase_property(game, player_index, square_index);
+    
+    } else if (owned >= 2) {
+      purchase_property(game, player_index, square_index);
+    
+    } else if (game->board[square_index].data.property.price > 5000) {
+      printf("%s skips: property too expensive with no color-group advantage\n", game->players[player_index].name);
+    
+    } else {
+      purchase_property(game, player_index, square_index);
+    }
   }
   return 0;
 }
