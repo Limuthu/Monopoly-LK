@@ -17,7 +17,7 @@ void handle_landing(GameState *game, int player_position, int player_id, int dic
   switch (game->board[player_position].type) {
 
   case SQUARE_START:
-    printf("Landed on GO\n");
+    printf("Landed exactly on GO — LKR 2000 already collected\n");
     break;
 
   case SQUARE_PROPERTY:

@@ -122,7 +122,8 @@ void move_player(GameState *game, int player_index, int dice_roll) {
          game->players[player_index].name, game->board[current_position].name,
          game->board[new_position].name, game->players[player_index].position);
   if (current_position > new_position) {
-    printf("%s has passed Go\n", game->players[player_index].name);
+    game->players[player_index].money += 2000;
+    printf("%s passed Go and collected LKR 2000\n", game->players[player_index].name);
   }
 }
 
