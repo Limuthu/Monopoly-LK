@@ -11,7 +11,7 @@ void sort_players(GameState *game);
 int has_tie(GameState *game);
 int roll_dice();
 void move_player(GameState *game, int player_index, int dice_roll);
-void handle_landing(GameState *game, int player_position, int player_id);
+void handle_landing(GameState *game, int player_position, int player_id, int dice_roll);
 
 int main(void) {
   GameState game;
@@ -57,7 +57,7 @@ int main(void) {
 
       //--------------------PLAYER LANDING--------------------
 
-      handle_landing(&game, game.players[i].position, game.players[i].id);
+      handle_landing(&game, game.players[i].position, game.players[i].id, dice_roll);
       printf("\n");
     }
     game.current_turn = game.current_turn + 1;

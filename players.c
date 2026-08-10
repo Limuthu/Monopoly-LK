@@ -129,10 +129,13 @@ void move_player(GameState *game, int player_index, int dice_roll) {
 // Buy Decision
 
 void purchase_property(GameState *game, int player_index, int square_index);
+void purchase_railway(GameState *game, int player_index, int square_index);
+void purchase_utility(GameState *game, int player_index, int square_index);
 
 // Helpers
 int count_owned_in_group(GameState *game, int player_id, int square_index);
 int group_size(GameState *game, int square_index);
+int find_player_index(GameState *game, int player_id);
 
 int should_buy(GameState *game, int player_id, int square_index) {
 
@@ -246,6 +249,100 @@ int should_buy(GameState *game, int player_id, int square_index) {
     
     } else {
       purchase_property(game, player_index, square_index);
+    }
+  }
+  return 0;
+}
+
+// RAILWAY BUY DECISION
+
+int should_buy_railway(GameState *game, int player_id, int square_index) {
+
+  int player_index = find_player_index(game, player_id);
+  if (player_index == -1) return 0;
+
+  double price = game->board[square_index].data.railway.price;
+
+  // Risk Taker — buys every railway he can afford
+  if (player_id == 3) {
+    if (game->players[player_index].money >= price) {
+      purchase_railway(game, player_index, square_index);
+    } else {
+      printf("%s cannot afford to buy this railway\n", game->players[player_index].name);
+    }
+
+  // Conservative Banker — buys only if at least 50% cash remains
+  } else if (player_id == 2) {
+    if (price <= game->players[player_index].money * 0.5) {
+      purchase_railway(game, player_index, square_index);
+    } else {
+      printf("%s cannot afford to buy this railway\n", game->players[player_index].name);
+    }
+
+  // Aggressive Investor — always buys railways (steady rent income)
+  // as long as Rs.100 reserve is maintained
+  } else if (player_id == 1) {
+    if (game->players[player_index].money - price < 100) {
+      printf("%s cannot afford to buy this railway (Future rent covering mindset)\n",
+             game->players[player_index].name);
+    } else {
+      purchase_railway(game, player_index, square_index);
+    }
+
+  // Opportunistic Trader — buys railway if Rs.500 reserve is maintained
+  } else if (player_id == 4) {
+    if (game->players[player_index].money - price < 500) {
+      printf("%s cannot afford to buy this railway (reserve mindset)\n",
+             game->players[player_index].name);
+    } else {
+      purchase_railway(game, player_index, square_index);
+    }
+  }
+  return 0;
+}
+
+// UTILITY BUY DECISION
+
+int should_buy_utility(GameState *game, int player_id, int square_index) {
+
+  int player_index = find_player_index(game, player_id);
+  if (player_index == -1) return 0;
+
+  double price = game->board[square_index].data.utility.price;
+
+  // Risk Taker — buys every utility he can afford
+  if (player_id == 3) {
+    if (game->players[player_index].money >= price) {
+      purchase_utility(game, player_index, square_index);
+    } else {
+      printf("%s cannot afford to buy this utility\n", game->players[player_index].name);
+    }
+
+  // Conservative Banker — buys only if at least 50% cash remains
+  } else if (player_id == 2) {
+    if (price <= game->players[player_index].money * 0.5) {
+      purchase_utility(game, player_index, square_index);
+    } else {
+      printf("%s cannot afford to buy this utility\n", game->players[player_index].name);
+    }
+
+  // Aggressive Investor — always buys utilities (dice-multiplier income is strong)
+  // as long as Rs.100 reserve is maintained
+  } else if (player_id == 1) {
+    if (game->players[player_index].money - price < 100) {
+      printf("%s cannot afford to buy this utility (Future rent covering mindset)\n",
+             game->players[player_index].name);
+    } else {
+      purchase_utility(game, player_index, square_index);
+    }
+
+  // Opportunistic Trader — buys utility if Rs.500 reserve is maintained
+  } else if (player_id == 4) {
+    if (game->players[player_index].money - price < 500) {
+      printf("%s cannot afford to buy this utility (reserve mindset)\n",
+             game->players[player_index].name);
+    } else {
+      purchase_utility(game, player_index, square_index);
     }
   }
   return 0;
