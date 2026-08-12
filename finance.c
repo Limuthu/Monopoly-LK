@@ -49,6 +49,7 @@ void purchase_utility(GameState *game, int player_index, int square_index) {
 int find_player_index(GameState *game, int player_id);
 int count_owned_railways(GameState *game, int owner_id);
 int count_owned_utilities(GameState *game, int owner_id);
+int has_monopoly(GameState *game, int player_id, int square_index);
 
 void pay_property_rent(GameState *game, int player_index, int square_index) {
   if(game->board[square_index].data.property.is_mortgaged == 1) {
@@ -59,13 +60,45 @@ void pay_property_rent(GameState *game, int player_index, int square_index) {
   int owner_id = game->board[square_index].owner_id;
   int owner_index = find_player_index(game, owner_id);
 
-  double rent = game->board[square_index].data.property.base_rent;
+  double base_rent = game->board[square_index].data.property.base_rent;
+  int num_houses = game->board[square_index].data.property.num_houses;
+  int hotel = game->board[square_index].data.property.has_hotel;
+
+  // Rent multiplier (Table 6)
+  // No buildings: 1x | 1 house: 2x | 2 houses: 3x | 3 houses: 5x | 4 houses: 7x | Hotel: 10x
+
+  double rent = base_rent;
+
+  if (hotel) {
+    rent = base_rent * 10;
+  } else if (num_houses == 4) {
+    rent = base_rent * 7;
+  } else if (num_houses == 3) {
+    rent = base_rent * 5;
+  } else if (num_houses == 2) {
+    rent = base_rent * 3;
+  } else if (num_houses == 1) {
+    rent = base_rent * 2;
+  }
+
   game->players[player_index].money -= rent;
   game->players[owner_index].money += rent;
 
-  printf("%s paid LKR %.0lf property rent to %s for %s\n",
-         game->players[player_index].name, rent,
-         game->players[owner_index].name, game->board[square_index].name);
+  // Display what multiplier was applied
+  if (hotel) {
+    printf("%s paid LKR %.0lf rent to %s for %s (HOTEL - 10x)\n",
+           game->players[player_index].name, rent,
+           game->players[owner_index].name, game->board[square_index].name);
+  } else if (num_houses > 0) {
+    printf("%s paid LKR %.0lf rent to %s for %s (%d house(s))\n",
+           game->players[player_index].name, rent,
+           game->players[owner_index].name, game->board[square_index].name,
+           num_houses);
+  } else {
+    printf("%s paid LKR %.0lf rent to %s for %s\n",
+           game->players[player_index].name, rent,
+           game->players[owner_index].name, game->board[square_index].name);
+  }
 }
 
 void pay_railway_rent(GameState *game, int player_index, int square_index) {
