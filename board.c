@@ -32,6 +32,7 @@ void init_board(GameState *game) {
   game->board[1].data.property.has_hotel = 0;
   game->board[1].data.property.is_mortgaged = 0;
   game->board[1].data.property.is_insured = 0;
+  game->board[1].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 2: Community Development Fund
@@ -57,6 +58,7 @@ void init_board(GameState *game) {
   game->board[3].data.property.has_hotel = 0;
   game->board[3].data.property.is_mortgaged = 0;
   game->board[3].data.property.is_insured = 0;
+  game->board[3].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 4: Income Tax
@@ -72,8 +74,10 @@ void init_board(GameState *game) {
   game->board[5].type = SQUARE_RAILWAY;
   strcpy(game->board[5].name, "Colombo Fort Railway Station");
   game->board[5].data.railway.price = 2000;
+  game->board[5].data.railway.mortgage_value = 1000;
   game->board[5].data.railway.owner_id = -1;
   game->board[5].data.railway.is_mortgaged = 0;
+  game->board[5].data.railway.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 6: Bambalapitiya
@@ -92,6 +96,7 @@ void init_board(GameState *game) {
   game->board[6].data.property.has_hotel = 0;
   game->board[6].data.property.is_mortgaged = 0;
   game->board[6].data.property.is_insured = 0;
+  game->board[6].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 7: National Event Card
@@ -117,6 +122,7 @@ void init_board(GameState *game) {
   game->board[8].data.property.has_hotel = 0;
   game->board[8].data.property.is_mortgaged = 0;
   game->board[8].data.property.is_insured = 0;
+  game->board[8].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 9: Mount Lavinia
@@ -135,6 +141,7 @@ void init_board(GameState *game) {
   game->board[9].data.property.has_hotel = 0;
   game->board[9].data.property.is_mortgaged = 0;
   game->board[9].data.property.is_insured = 0;
+  game->board[9].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 10: Jail Just Visiting
@@ -160,6 +167,7 @@ void init_board(GameState *game) {
   game->board[11].data.property.has_hotel = 0;
   game->board[11].data.property.is_mortgaged = 0;
   game->board[11].data.property.is_insured = 0;
+  game->board[11].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 12: Ceylon Electricity Board
@@ -168,8 +176,10 @@ void init_board(GameState *game) {
   game->board[12].type = SQUARE_UTILITY;
   strcpy(game->board[12].name, "Ceylon Electricity Board");
   game->board[12].data.utility.price = 1500;
+  game->board[12].data.utility.mortgage_value = 750;
   game->board[12].data.utility.owner_id = -1;
   game->board[12].data.utility.is_mortgaged = 0;
+  game->board[12].data.utility.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 13: Maharagama
@@ -188,6 +198,7 @@ void init_board(GameState *game) {
   game->board[13].data.property.has_hotel = 0;
   game->board[13].data.property.is_mortgaged = 0;
   game->board[13].data.property.is_insured = 0;
+  game->board[13].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 14: Kottawa
@@ -206,6 +217,7 @@ void init_board(GameState *game) {
   game->board[14].data.property.has_hotel = 0;
   game->board[14].data.property.is_mortgaged = 0;
   game->board[14].data.property.is_insured = 0;
+  game->board[14].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 15: Kandy Railway Station
@@ -214,8 +226,10 @@ void init_board(GameState *game) {
   game->board[15].type = SQUARE_RAILWAY;
   strcpy(game->board[15].name, "Kandy Railway Station");
   game->board[15].data.railway.price = 2000;
+  game->board[15].data.railway.mortgage_value = 1000;
   game->board[15].data.railway.owner_id = -1;
   game->board[15].data.railway.is_mortgaged = 0;
+  game->board[15].data.railway.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 16: Negombo
@@ -234,6 +248,7 @@ void init_board(GameState *game) {
   game->board[16].data.property.has_hotel = 0;
   game->board[16].data.property.is_mortgaged = 0;
   game->board[16].data.property.is_insured = 0;
+  game->board[16].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 17: Sri Lanka Insurance
@@ -259,6 +274,7 @@ void init_board(GameState *game) {
   game->board[18].data.property.has_hotel = 0;
   game->board[18].data.property.is_mortgaged = 0;
   game->board[18].data.property.is_insured = 0;
+  game->board[18].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 19: Ja-Ela
@@ -277,6 +293,7 @@ void init_board(GameState *game) {
   game->board[19].data.property.has_hotel = 0;
   game->board[19].data.property.is_mortgaged = 0;
   game->board[19].data.property.is_insured = 0;
+  game->board[19].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 20: Free Parking
@@ -302,6 +319,7 @@ void init_board(GameState *game) {
   game->board[21].data.property.has_hotel = 0;
   game->board[21].data.property.is_mortgaged = 0;
   game->board[21].data.property.is_insured = 0;
+  game->board[21].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 22: National Event Card
@@ -327,6 +345,7 @@ void init_board(GameState *game) {
   game->board[23].data.property.has_hotel = 0;
   game->board[23].data.property.is_mortgaged = 0;
   game->board[23].data.property.is_insured = 0;
+  game->board[23].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 24: Katugastota
@@ -345,6 +364,7 @@ void init_board(GameState *game) {
   game->board[24].data.property.has_hotel = 0;
   game->board[24].data.property.is_mortgaged = 0;
   game->board[24].data.property.is_insured = 0;
+  game->board[24].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 25: Galle Railway Station
@@ -353,8 +373,10 @@ void init_board(GameState *game) {
   game->board[25].type = SQUARE_RAILWAY;
   strcpy(game->board[25].name, "Galle Railway Station");
   game->board[25].data.railway.price = 2000;
+  game->board[25].data.railway.mortgage_value = 1000;
   game->board[25].data.railway.owner_id = -1;
   game->board[25].data.railway.is_mortgaged = 0;
+  game->board[25].data.railway.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 26: Galle Fort
@@ -373,6 +395,7 @@ void init_board(GameState *game) {
   game->board[26].data.property.has_hotel = 0;
   game->board[26].data.property.is_mortgaged = 0;
   game->board[26].data.property.is_insured = 0;
+  game->board[26].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 27: Unawatuna
@@ -391,6 +414,7 @@ void init_board(GameState *game) {
   game->board[27].data.property.has_hotel = 0;
   game->board[27].data.property.is_mortgaged = 0;
   game->board[27].data.property.is_insured = 0;
+  game->board[27].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 28: National Water Supply and Drainage Board
@@ -399,8 +423,10 @@ void init_board(GameState *game) {
   game->board[28].type = SQUARE_UTILITY;
   strcpy(game->board[28].name, "National Water Supply and Drainage Board");
   game->board[28].data.utility.price = 1500;
+  game->board[28].data.utility.mortgage_value = 750;
   game->board[28].data.utility.owner_id = -1;
   game->board[28].data.utility.is_mortgaged = 0;
+  game->board[28].data.utility.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 29: Hikkaduwa
@@ -419,6 +445,7 @@ void init_board(GameState *game) {
   game->board[29].data.property.has_hotel = 0;
   game->board[29].data.property.is_mortgaged = 0;
   game->board[29].data.property.is_insured = 0;
+  game->board[29].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 30: Go To Jail
@@ -444,6 +471,7 @@ void init_board(GameState *game) {
   game->board[31].data.property.has_hotel = 0;
   game->board[31].data.property.is_mortgaged = 0;
   game->board[31].data.property.is_insured = 0;
+  game->board[31].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 32: Nallur
@@ -462,6 +490,7 @@ void init_board(GameState *game) {
   game->board[32].data.property.has_hotel = 0;
   game->board[32].data.property.is_mortgaged = 0;
   game->board[32].data.property.is_insured = 0;
+  game->board[32].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 33: Ceylinco Insurance
@@ -487,6 +516,7 @@ void init_board(GameState *game) {
   game->board[34].data.property.has_hotel = 0;
   game->board[34].data.property.is_mortgaged = 0;
   game->board[34].data.property.is_insured = 0;
+  game->board[34].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 35: Jaffna Railway Station
@@ -495,8 +525,10 @@ void init_board(GameState *game) {
   game->board[35].type = SQUARE_RAILWAY;
   strcpy(game->board[35].name, "Jaffna Railway Station");
   game->board[35].data.railway.price = 2000;
+  game->board[35].data.railway.mortgage_value = 1000;
   game->board[35].data.railway.owner_id = -1;
   game->board[35].data.railway.is_mortgaged = 0;
+  game->board[35].data.railway.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 36: National Event Card
@@ -522,6 +554,7 @@ void init_board(GameState *game) {
   game->board[37].data.property.has_hotel = 0;
   game->board[37].data.property.is_mortgaged = 0;
   game->board[37].data.property.is_insured = 0;
+  game->board[37].data.property.is_loan_locked = 0;
 
   // -------------------------------------------------------------
   // Index 38: Bank of Ceylon
@@ -547,4 +580,5 @@ void init_board(GameState *game) {
   game->board[39].data.property.has_hotel = 0;
   game->board[39].data.property.is_mortgaged = 0;
   game->board[39].data.property.is_insured = 0;
+  game->board[39].data.property.is_loan_locked = 0;
 }

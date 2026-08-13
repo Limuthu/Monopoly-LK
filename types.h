@@ -44,8 +44,10 @@ typedef struct {
   int num_houses;
   int has_hotel;
   int owner_id;
+
   int is_mortgaged;
   int is_insured;
+  int is_loan_locked;
   PropertyGroup group;
 } PropertyData;
 
@@ -53,16 +55,20 @@ typedef struct {
 
 typedef struct {
   double price;
+  double mortgage_value;   // needed for collateral calculation
   int owner_id;
   int is_mortgaged;
+  int is_loan_locked;
 } RailwayData;
 
 // utility data structure
 
 typedef struct {
   double price;
+  double mortgage_value;   // needed for collateral calculation
   int owner_id;
   int is_mortgaged;
+  int is_loan_locked;
 } UtilityData;
 
 // Square data structure
@@ -87,6 +93,11 @@ typedef struct {
   int in_jail;
   int jail_turns;
   int roll_result;
+
+  int has_loan;            
+  double loan_amount;      
+  int loan_rounds_left;   
+  int loan_start_round;
 } Player;
 
 typedef struct {

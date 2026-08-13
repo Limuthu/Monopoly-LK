@@ -13,6 +13,8 @@ int roll_dice();
 void move_player(GameState *game, int player_index, int dice_roll);
 void handle_landing(GameState *game, int player_position, int player_id, int dice_roll);
 void player_build_decision(GameState *game, int player_id);
+void apply_interest_all(GameState *game);
+void check_loan_defaults(GameState *game);
 
 int main(void) {
   GameState game;
@@ -66,6 +68,13 @@ int main(void) {
 
       printf("\n");
     }
+
+    // Step 4: END-OF-ROUND PROCESSING — compound interest on all active loans
+    apply_interest_all(&game);
+
+    // Step 5: Check if any loans have expired — trigger foreclosure
+    check_loan_defaults(&game);
+
     game.current_turn = game.current_turn + 1;
     j++;
   }

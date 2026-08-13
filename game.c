@@ -9,6 +9,7 @@ void pay_property_rent(GameState *game, int player_index, int square_index);
 void pay_railway_rent(GameState *game, int player_index, int square_index);
 void pay_utility_rent(GameState *game, int player_index, int square_index, int dice_roll);
 int find_player_index(GameState *game, int player_id);
+void player_loan_decision(GameState *game, int player_id);
 
 void handle_landing(GameState *game, int player_position, int player_id, int dice_roll) {
 
@@ -72,7 +73,8 @@ void handle_landing(GameState *game, int player_position, int player_id, int dic
     printf("Landed on Special\n");
     break;
   case SQUARE_BANK:
-    printf("Landed on Bank\n");
+    printf("Landed on Bank of Ceylon\n");
+    player_loan_decision(game, player_id);
     break;
   }
 }

@@ -18,6 +18,10 @@ void init_players(GameState *game) {
   game->players[0].in_jail = 0;
   game->players[0].jail_turns = 0;
   game->players[0].roll_result = 0;
+  game->players[0].has_loan = 0;
+  game->players[0].loan_amount = 0;
+  game->players[0].loan_rounds_left = 0;
+  game->players[0].loan_start_round = 0;
 
   // Player 2 — Conservative Banker
   game->players[1].id = 2;
@@ -28,6 +32,10 @@ void init_players(GameState *game) {
   game->players[1].in_jail = 0;
   game->players[1].jail_turns = 0;
   game->players[1].roll_result = 0;
+  game->players[1].has_loan = 0;
+  game->players[1].loan_amount = 0;
+  game->players[1].loan_rounds_left = 0;
+  game->players[1].loan_start_round = 0;
 
   // Player 3 — Risk Taker
   game->players[2].id = 3;
@@ -37,6 +45,10 @@ void init_players(GameState *game) {
   game->players[2].in_jail = 0;
   game->players[2].jail_turns = 0;
   game->players[2].roll_result = 0;
+  game->players[2].has_loan = 0;
+  game->players[2].loan_amount = 0;
+  game->players[2].loan_rounds_left = 0;
+  game->players[2].loan_start_round = 0;
 
   // Player 4 — Opportunistic Trader
   game->players[3].id = 4;
@@ -47,6 +59,10 @@ void init_players(GameState *game) {
   game->players[3].in_jail = 0;
   game->players[3].jail_turns = 0;
   game->players[3].roll_result = 0;
+  game->players[3].has_loan = 0;
+  game->players[3].loan_amount = 0;
+  game->players[3].loan_rounds_left = 0;
+  game->players[3].loan_start_round = 0;
 }
 
 // DICE ROLL

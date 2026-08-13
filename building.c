@@ -183,6 +183,7 @@ void player_build_decision(GameState *game, int player_id) {
   else if (player_id == 2) {
 
     int mortgages_exist = has_any_mortgage(game, player_id);
+    int has_loan = game->players[player_index].has_loan;
 
     int built = 1;
     while (built) {
@@ -200,8 +201,8 @@ void player_build_decision(GameState *game, int player_id) {
           }
         }
 
-        // Hotels only allowed when zero mortgages AND 50% cash reserve
-        if (!mortgages_exist && can_build_hotel(game, i)) {
+        // Hotels only allowed when zero mortgages AND no active loan AND 50% cash reserve
+        if (!mortgages_exist && !has_loan && can_build_hotel(game, i)) {
           double cost = game->board[i].data.property.hotel_cost;
           if (cost <= game->players[player_index].money * 0.5) {
             build_hotel(game, i);
