@@ -341,6 +341,8 @@ void increase_loan(GameState *game, int player_id) {
 // Transfers all loan-locked assets back to the bank (owner_id = -1)
 // Demolishes all buildings, cancels insurance, clears debt
 
+void run_auction(GameState *game, int square_index, int triggering_player_id);
+
 void foreclosure(GameState *game, int player_id) {
   int idx = find_player_index(game, player_id);
   if (idx == -1) return;
@@ -348,6 +350,10 @@ void foreclosure(GameState *game, int player_id) {
   printf("\n*** FORECLOSURE: %s has defaulted on their loan! ***\n",
          game->players[idx].name);
   printf("All pledged assets are being seized by the Bank of Ceylon...\n");
+
+  // Track seized squares for post-seizure auction
+  int seized_indices[TOTAL_SQUARES];
+  int seized_count = 0;
 
   for (int i = 0; i < TOTAL_SQUARES; i++) {
     if (game->board[i].owner_id != player_id) continue;
@@ -373,6 +379,8 @@ void foreclosure(GameState *game, int player_id) {
       game->board[i].data.property.owner_id = -1;
       game->board[i].owner_id = -1;
 
+      seized_indices[seized_count++] = i;
+
     } else if (game->board[i].type == SQUARE_RAILWAY &&
                game->board[i].data.railway.is_loan_locked) {
 
@@ -383,6 +391,8 @@ void foreclosure(GameState *game, int player_id) {
       game->board[i].data.railway.owner_id = -1;
       game->board[i].owner_id = -1;
 
+      seized_indices[seized_count++] = i;
+
     } else if (game->board[i].type == SQUARE_UTILITY &&
                game->board[i].data.utility.is_loan_locked) {
 
@@ -392,6 +402,8 @@ void foreclosure(GameState *game, int player_id) {
       game->board[i].data.utility.is_mortgaged = 0;
       game->board[i].data.utility.owner_id = -1;
       game->board[i].owner_id = -1;
+
+      seized_indices[seized_count++] = i;
     }
   }
 
@@ -403,6 +415,11 @@ void foreclosure(GameState *game, int player_id) {
 
   printf("*** %s's debt has been cleared - assets forfeited ***\n\n",
          game->players[idx].name);
+
+  // Auction all seized assets (Rule: foreclosed assets go to auction)
+  for (int s = 0; s < seized_count; s++) {
+    run_auction(game, seized_indices[s], player_id);
+  }
 }
 
 // =============================================================

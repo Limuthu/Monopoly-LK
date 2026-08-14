@@ -98,6 +98,7 @@ typedef struct {
   double loan_amount;      
   int loan_rounds_left;   
   int loan_start_round;
+  int is_bankrupt;
 } Player;
 
 typedef struct {

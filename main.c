@@ -55,6 +55,9 @@ int main(void) {
     printf("---Round %d---\n", j + 1);
     for (int i = 0; i < game.num_players; i++) {
 
+      // Skip bankrupt players
+      if (game.players[i].is_bankrupt) continue;
+
       // Step 1: Roll dice and move
       int dice_roll = roll_dice();
       printf("%s rolled : %d\n", game.players[i].name, dice_roll);
