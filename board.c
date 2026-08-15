@@ -596,8 +596,16 @@ void init_board(GameState *game) {
       game->board[i].data.property.insurance_rounds_left = 0;
       game->board[i].data.property.is_damaged = 0;
       game->board[i].data.property.pending_repair_cost = 0.0;
+      game->board[i].data.property.closed_rounds_left = 0;
+    } else if (game->board[i].type == SQUARE_RAILWAY) {
+      game->board[i].data.railway.closed_rounds_left = 0;
+    } else if (game->board[i].type == SQUARE_UTILITY) {
+      game->board[i].data.utility.closed_rounds_left = 0;
     }
   }
+
+  void init_national_deck(GameState *game);
+  init_national_deck(game);
 
   // Initialize Inflation / Economy state
   game->current_inflation_rate = 0.0;

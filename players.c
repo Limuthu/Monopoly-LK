@@ -70,6 +70,13 @@ void init_players(GameState *game) {
   game->players[3].loan_rounds_left = 0;
   game->players[3].loan_start_round = 0;
   game->players[3].is_bankrupt = 0;
+
+  for (int i = 0; i < game->num_players; i++) {
+    game->players[i].active_national_card = NATIONAL_CARD_NONE;
+    game->players[i].national_card_rounds_left = 0;
+    game->players[i].revalued_group = GROUP_NONE;
+    game->players[i].construction_suspended = 0;
+  }
 }
 
 // DICE ROLL

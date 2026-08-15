@@ -104,6 +104,21 @@ double get_dynamic_price(GameState *game, int square_index) {
     base *= 1.20;
   }
   
+  // Apply National Event Cards
+  int owner_id = game->board[square_index].data.property.owner_id;
+  if (owner_id != -1) {
+    for (int i = 0; i < game->num_players; i++) {
+      if (game->players[i].id == owner_id) {
+        NationalEventCardType card = game->players[i].active_national_card;
+        if (card == NATIONAL_CARD_STOCK_MARKET_RISE) base *= 1.10;
+        if (card == NATIONAL_CARD_ECONOMIC_DOWNTURN) base *= 0.85;
+        if (card == NATIONAL_CARD_FOREIGN_FUNDING && is_commercial(square_index)) base *= 1.15;
+        if (card == NATIONAL_CARD_PROPERTY_REVALUATION && group == game->players[i].revalued_group) base *= 1.15;
+        break;
+      }
+    }
+  }
+  
   // 3. Apply Regional Development Modifiers
   if (game->active_regional_card == CARD_PORT_CITY_EXPANSION && (square_index == 1 || square_index == 3)) { // Port City Expansion: Pettah and Maradana (Values +25%)
     base *= 1.25;
@@ -140,6 +155,7 @@ double get_dynamic_property_value(GameState *game, int square_index) {
 
 double get_dynamic_rent(GameState *game, int square_index) {
   if (game->board[square_index].type != SQUARE_PROPERTY) return 0;
+  if (game->board[square_index].data.property.closed_rounds_left > 0) return 0;
   
   double base = game->board[square_index].data.property.base_rent;
   PropertyGroup group = game->board[square_index].data.property.group;
@@ -160,6 +176,19 @@ double get_dynamic_rent(GameState *game, int square_index) {
   } else if (game->active_economic_event == EVENT_POLITICAL_UNREST) {
     if (game->board[square_index].data.property.has_hotel) {
       base *= 0.5; // Hotel rent drops 50%
+    }
+  }
+  
+  // Apply National Event Cards
+  int owner_id = game->board[square_index].data.property.owner_id;
+  if (owner_id != -1) {
+    for (int i = 0; i < game->num_players; i++) {
+      if (game->players[i].id == owner_id) {
+        NationalEventCardType card = game->players[i].active_national_card;
+        if (card == NATIONAL_CARD_TOURISM_HYPE && game->board[square_index].data.property.has_hotel) base *= 2.0;
+        if (card == NATIONAL_CARD_FESTIVAL_SEASON && game->board[square_index].data.property.has_hotel) base *= 1.5;
+        break;
+      }
     }
   }
   
@@ -219,6 +248,19 @@ double get_dynamic_build_cost(GameState *game, int square_index, int is_hotel) {
     base *= 1.20; // +20% development cost
   } else if (game->active_economic_event == EVENT_GOV_HOUSING && !is_hotel) {
     base *= 0.75; // -25% house cost
+  }
+  
+  // Apply National Event Cards
+  int owner_id = game->board[square_index].data.property.owner_id;
+  if (owner_id != -1) {
+    for (int i = 0; i < game->num_players; i++) {
+      if (game->players[i].id == owner_id) {
+        NationalEventCardType card = game->players[i].active_national_card;
+        if (card == NATIONAL_CARD_HOUSING_SUBSIDY && !is_hotel) base *= 0.70;
+        if (card == NATIONAL_CARD_CURRENCY_DEPRECIATION) base *= 1.10;
+        break;
+      }
+    }
   }
   
   return base;

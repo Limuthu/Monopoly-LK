@@ -144,6 +144,11 @@ void player_build_decision(GameState *game, int player_id) {
   int player_index = find_player_index(game, player_id);
   if (player_index == -1) return;
 
+  if (game->players[player_index].construction_suspended) {
+    printf("[%s] Cannot construct due to Labour Strike!\n", game->players[player_index].name);
+    return;
+  }
+
   // ---------------------------------------------------------
   // Player 1 — Aggressive Investor
   // Builds max houses immediately after monopoly.

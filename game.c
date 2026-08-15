@@ -11,6 +11,7 @@ void pay_utility_rent(GameState *game, int player_index, int square_index, int d
 int find_player_index(GameState *game, int player_id);
 void player_loan_decision(GameState *game, int player_id);
 void handle_insurance_landing(GameState *game, int player_index);
+void draw_national_card(GameState *game, int player_index);
 
 void handle_landing(GameState *game, int player_position, int player_id, int dice_roll) {
 
@@ -65,7 +66,7 @@ void handle_landing(GameState *game, int player_position, int player_id, int dic
     handle_insurance_landing(game, visitor_index);
     break;
   case SQUARE_EVENT:
-    printf("Landed on Event\n");
+    draw_national_card(game, visitor_index);
     break;
   case SQUARE_JAIL:
     printf("Landed on Jail\n");

@@ -442,7 +442,12 @@ void apply_interest_all(GameState *game) {
     if (!game->players[i].has_loan) continue;
 
     double old_balance = game->players[i].loan_amount;
-    double interest = old_balance * game->players[i].loan_interest_rate;
+    double rate = game->players[i].loan_interest_rate;
+    if (game->players[i].active_national_card == NATIONAL_CARD_INTEREST_RATE_CUT) rate -= 0.02;
+    if (game->players[i].active_national_card == NATIONAL_CARD_INTEREST_RATE_INCREASE) rate += 0.02;
+    if (rate < 0) rate = 0;
+    
+    double interest = old_balance * rate;
 
     game->players[i].loan_amount = old_balance + interest;
     game->players[i].loan_rounds_left--;

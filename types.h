@@ -58,6 +58,31 @@ typedef enum {
   CARD_WATER_SHORTAGE
 } RegionalCardType;
 
+// National Event Cards
+typedef enum {
+  NATIONAL_CARD_NONE,
+  NATIONAL_CARD_TOURISM_HYPE,
+  NATIONAL_CARD_FUEL_SHORTAGE,
+  NATIONAL_CARD_HEAVY_FLOODS,
+  NATIONAL_CARD_POLITICAL_RALLY,
+  NATIONAL_CARD_STOCK_MARKET_RISE,
+  NATIONAL_CARD_ECONOMIC_DOWNTURN,
+  NATIONAL_CARD_HOUSING_SUBSIDY,
+  NATIONAL_CARD_INTEREST_RATE_CUT,
+  NATIONAL_CARD_INTEREST_RATE_INCREASE,
+  NATIONAL_CARD_TAX_AMNESTY,
+  NATIONAL_CARD_POWER_FAILURE,
+  NATIONAL_CARD_FOREIGN_FUNDING,
+  NATIONAL_CARD_PORT_EXPANSION,
+  NATIONAL_CARD_FESTIVAL_SEASON,
+  NATIONAL_CARD_LABOUR_STRIKE,
+  NATIONAL_CARD_INSURANCE_DISCOUNT,
+  NATIONAL_CARD_PROPERTY_REVALUATION,
+  NATIONAL_CARD_CURRENCY_DEPRECIATION,
+  NATIONAL_CARD_GOVERNMENT_GRANT,
+  NATIONAL_CARD_NATIONAL_DISASTER
+} NationalEventCardType;
+
 // Group types for properties
 
 typedef enum {
@@ -102,6 +127,7 @@ typedef struct {
   double building_condition;     // 0.0 to 100.0. Starts at 100. Drops 2/round.
   int    rounds_without_maint;   // Counter. > 20 triggers structural damage.
   int    has_structural_damage;  // Flag: 1 after neglect damage fires.
+  int    closed_rounds_left;     // National Event: Political Rally
 } PropertyData;
 
 // Railway data structure
@@ -112,6 +138,7 @@ typedef struct {
   int owner_id;
   int is_mortgaged;
   int is_loan_locked;
+  int closed_rounds_left;
 } RailwayData;
 
 // utility data structure
@@ -122,6 +149,7 @@ typedef struct {
   int owner_id;
   int is_mortgaged;
   int is_loan_locked;
+  int closed_rounds_left;
 } UtilityData;
 
 // Square data structure
@@ -153,6 +181,12 @@ typedef struct {
   int loan_start_round;
   double loan_interest_rate;
   int is_bankrupt;
+
+  // National Event Tracking
+  NationalEventCardType active_national_card;
+  int national_card_rounds_left;
+  PropertyGroup revalued_group;
+  int construction_suspended;
 } Player;
 
 typedef struct {
@@ -181,6 +215,10 @@ typedef struct {
   // Regional Development
   RegionalCardType active_regional_card;
   int regional_card_rounds_left;
+
+  // National Event Deck
+  NationalEventCardType national_deck[20];
+  int national_deck_index;
 } GameState;
 
 #endif

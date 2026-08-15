@@ -180,6 +180,42 @@ int main(void) {
     // Step 10: Update Insurance Policies
     update_insurance_durations(&game);
 
+    // Step 10.5: Update National Event Cards
+    for (int p = 0; p < game.num_players; p++) {
+      if (game.players[p].active_national_card != NATIONAL_CARD_NONE) {
+        if (game.players[p].national_card_rounds_left > 0) {
+          game.players[p].national_card_rounds_left--;
+          if (game.players[p].national_card_rounds_left == 0) {
+            printf("[NATIONAL EVENT EXPIRED] %s's event card has concluded.\n", game.players[p].name);
+            game.players[p].active_national_card = NATIONAL_CARD_NONE;
+            game.players[p].revalued_group = GROUP_NONE;
+            game.players[p].construction_suspended = 0;
+          }
+        }
+      }
+    }
+
+    // Step 10.6: Update Closed Properties (Political Rally)
+    for (int idx = 0; idx < TOTAL_SQUARES; idx++) {
+      if (game.board[idx].type == SQUARE_PROPERTY && game.board[idx].data.property.closed_rounds_left > 0) {
+        game.board[idx].data.property.closed_rounds_left--;
+        if (game.board[idx].data.property.closed_rounds_left == 0) {
+            printf("[PROPERTY REOPENED] %s is open for business again!\n", game.board[idx].name);
+        }
+      } else if (game.board[idx].type == SQUARE_RAILWAY && game.board[idx].data.railway.closed_rounds_left > 0) {
+        game.board[idx].data.railway.closed_rounds_left--;
+        if (game.board[idx].data.railway.closed_rounds_left == 0) {
+            printf("[PROPERTY REOPENED] %s is open for business again!\n", game.board[idx].name);
+        }
+      } else if (game.board[idx].type == SQUARE_UTILITY && game.board[idx].data.utility.closed_rounds_left > 0) {
+        game.board[idx].data.utility.closed_rounds_left--;
+        if (game.board[idx].data.utility.closed_rounds_left == 0) {
+            printf("[PROPERTY REOPENED] %s is open for business again!\n", game.board[idx].name);
+        }
+      }
+    }
+
+
     // Step 11: Print active market conditions (Rule 36)
     if (game.market_rounds_left > 0) {
       game.market_rounds_left--;

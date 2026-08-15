@@ -127,6 +127,11 @@ void pay_railway_rent(GameState *game, int player_index, int square_index) {
     printf("No rent, railway is mortgaged\n");
     return;
   }
+  
+  if (game->board[square_index].data.railway.closed_rounds_left > 0) {
+    printf("No rent, railway is closed due to Political Rally!\n");
+    return;
+  }
 
   int owner_id = game->board[square_index].owner_id;
   int owner_index = find_player_index(game, owner_id);
@@ -156,6 +161,11 @@ void pay_railway_rent(GameState *game, int player_index, int square_index) {
 void pay_utility_rent(GameState *game, int player_index, int square_index, int dice_roll) {
   if(game->board[square_index].data.utility.is_mortgaged == 1) {
     printf("No rent, utility is mortgaged\n");
+    return;
+  }
+  
+  if (game->board[square_index].data.utility.closed_rounds_left > 0) {
+    printf("No rent, utility is closed due to Political Rally!\n");
     return;
   }
 
