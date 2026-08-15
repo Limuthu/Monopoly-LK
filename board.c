@@ -593,4 +593,16 @@ void init_board(GameState *game) {
       game->board[i].data.property.has_structural_damage = 0;
     }
   }
+
+  // Initialize Inflation / Economy state
+  game->current_inflation_rate = 0.0;
+  game->current_interest_rate = 0.08;
+
+  game->railway_rent_base[0] = 250;
+  game->railway_rent_base[1] = 500;
+  game->railway_rent_base[2] = 1000;
+  game->railway_rent_base[3] = 2000;
+
+  game->utility_rent_base[0] = 4;
+  game->utility_rent_base[1] = 10;
 }

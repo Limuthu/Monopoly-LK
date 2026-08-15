@@ -19,6 +19,7 @@ void roll_two_dice(int *d1, int *d2);
 void apply_property_depreciation(GameState *game);
 void apply_building_depreciation(GameState *game);
 void player_maintenance_decision(GameState *game, int player_id);
+void handle_inflation(GameState *game);
 
 void handle_jail_turn(GameState *game, int player_index, int *dice_roll_out, int *moved_this_turn) {
   Player *p = &game->players[player_index];
@@ -145,6 +146,11 @@ int main(void) {
     // Step 6: Depreciation
     apply_property_depreciation(&game);
     apply_building_depreciation(&game);
+
+    // Step 7: Inflation Cycle (every 10 rounds)
+    if ((j + 1) % 10 == 0) {
+      handle_inflation(&game);
+    }
 
     game.current_turn = game.current_turn + 1;
     j++;

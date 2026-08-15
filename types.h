@@ -108,6 +108,7 @@ typedef struct {
   double loan_amount;      
   int loan_rounds_left;   
   int loan_start_round;
+  double loan_interest_rate;
   int is_bankrupt;
 } Player;
 
@@ -117,6 +118,12 @@ typedef struct {
   int num_players;
   int current_turn;
   double bank_money;
+
+  // Global Economy / Inflation
+  double current_inflation_rate;
+  double current_interest_rate;
+  double railway_rent_base[4];
+  double utility_rent_base[2];
 } GameState;
 
 #endif

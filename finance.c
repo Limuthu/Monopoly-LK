@@ -124,19 +124,15 @@ void pay_railway_rent(GameState *game, int player_index, int square_index) {
   int owner_index = find_player_index(game, owner_id);
 
   int owned = count_owned_railways(game, owner_id);
-  int rent = 0;
-  
-  switch(owned) {
-    case 1: rent = 250;  break;
-    case 2: rent = 500;  break;
-    case 3: rent = 1000; break;
-    case 4: rent = 2000; break;
+  double rent = 0;
+  if (owned > 0 && owned <= 4) {
+    rent = game->railway_rent_base[owned - 1];
   }
 
   game->players[player_index].money -= rent;
   game->players[owner_index].money += rent;
 
-  printf("%s paid LKR %d railway rent to %s (%s owns %d station(s))\n",
+  printf("%s paid LKR %.0lf railway rent to %s (%s owns %d station(s))\n",
          game->players[player_index].name, rent,
          game->players[owner_index].name, game->players[owner_index].name, owned);
 }
@@ -151,17 +147,15 @@ void pay_utility_rent(GameState *game, int player_index, int square_index, int d
   int owner_index = find_player_index(game, owner_id);
 
   int owned = count_owned_utilities(game, owner_id);
-  int rent = 0;
-
-  switch(owned) {
-    case 1: rent = 4  * dice_roll; break;
-    case 2: rent = 10 * dice_roll; break;
+  double rent = 0;
+  if (owned > 0 && owned <= 2) {
+    rent = game->utility_rent_base[owned - 1] * dice_roll;
   }
   
   game->players[player_index].money -= rent;
   game->players[owner_index].money += rent;
 
-  printf("%s paid LKR %d utility rent to %s (dice was %d, %s owns %d utility(s))\n",
+  printf("%s paid LKR %.0lf utility rent to %s (dice was %d, %s owns %d utility(s))\n",
          game->players[player_index].name, rent,
          game->players[owner_index].name, dice_roll,
          game->players[owner_index].name, owned);

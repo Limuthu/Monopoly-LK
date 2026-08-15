@@ -262,8 +262,13 @@ void player_build_decision(GameState *game, int player_id) {
 
   else if (player_id == 4) {
 
-    // TODO: When inflation/events system is implemented, add checks:
-    //   - Skip building if inflation rate is high
+    if (game->current_inflation_rate > 0.0) {
+      printf("[Opportunistic Trader] Delaying construction due to inflation (%.0lf%%)\n", 
+             game->current_inflation_rate * 100);
+      return;
+    }
+
+    // TODO: When events system is implemented, add check:
     //   - Build aggressively if Housing Subsidy is active (30% cost reduction)
 
     int built = 1;

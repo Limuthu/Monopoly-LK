@@ -1,7 +1,6 @@
 #include "types.h"
 #include <stdio.h>
 
-#define LOAN_INTEREST_RATE 0.08
 #define LOAN_DURATION 20
 #define COLLATERAL_RATIO 0.75
 
@@ -176,6 +175,7 @@ void obtain_loan(GameState *game, int player_id, double amount) {
   game->players[idx].loan_amount = amount;
   game->players[idx].loan_rounds_left = LOAN_DURATION;
   game->players[idx].loan_start_round = game->current_turn;
+  game->players[idx].loan_interest_rate = game->current_interest_rate;
 
   // Output matching PDF format
   printf("%s obtained a secured loan.\n", game->players[idx].name);
@@ -437,7 +437,7 @@ void apply_interest_all(GameState *game) {
     if (!game->players[i].has_loan) continue;
 
     double old_balance = game->players[i].loan_amount;
-    double interest = old_balance * LOAN_INTEREST_RATE;
+    double interest = old_balance * game->players[i].loan_interest_rate;
 
     game->players[i].loan_amount = old_balance + interest;
     game->players[i].loan_rounds_left--;
