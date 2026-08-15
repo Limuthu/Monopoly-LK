@@ -250,6 +250,11 @@ double get_dynamic_build_cost(GameState *game, int square_index, int is_hotel) {
     base *= 0.75; // -25% house cost
   }
   
+  // Apply Government Regulations
+  if (game->active_regulation == REGULATION_HOUSING_SUBSIDY && !is_hotel) {
+    base *= 0.70; // -30% house cost
+  }
+  
   // Apply National Event Cards
   int owner_id = game->board[square_index].data.property.owner_id;
   if (owner_id != -1) {

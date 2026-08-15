@@ -14,8 +14,13 @@ double get_dynamic_interest_rate(GameState *game) {
     rate += 0.15; // Absolute +15%
   } else if (game->active_economic_event == EVENT_STOCK_MARKET_BOOM) {
     rate -= 0.10; // Absolute -10%
-    if (rate < 0.0) rate = 0.0;
   }
+  
+  if (game->active_regulation == REGULATION_REDUCE_LOAN_INTEREST) {
+    rate -= 0.02; // Absolute -2%
+  }
+  
+  if (rate < 0.0) rate = 0.0;
   return rate;
 }
 

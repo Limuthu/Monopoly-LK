@@ -241,6 +241,10 @@ static void buy_insurance(GameState *game, int player_index, int square_index, i
     premium *= 0.80; // 20% discount
   }
 
+  if (game->active_regulation == REGULATION_INSURANCE_REGULATION) {
+    premium *= 0.85; // 15% discount
+  }
+
   if (game->players[player_index].money >= premium) {
     game->players[player_index].money -= premium;
     game->board[square_index].data.property.is_insured = 1;

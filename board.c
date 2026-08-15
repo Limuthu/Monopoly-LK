@@ -597,6 +597,7 @@ void init_board(GameState *game) {
       game->board[i].data.property.is_damaged = 0;
       game->board[i].data.property.pending_repair_cost = 0.0;
       game->board[i].data.property.closed_rounds_left = 0;
+      game->board[i].data.property.forced_development_rounds_left = 0;
     } else if (game->board[i].type == SQUARE_RAILWAY) {
       game->board[i].data.railway.closed_rounds_left = 0;
     } else if (game->board[i].type == SQUARE_UTILITY) {
@@ -626,4 +627,8 @@ void init_board(GameState *game) {
   for (int i = 0; i < 9; i++) {
     game->group_cooldowns[i] = 0;
   }
+  
+  // Initialize Government Regulations
+  game->active_regulation = REGULATION_NONE;
+  game->regulation_rounds_left = 0;
 }

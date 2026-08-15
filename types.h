@@ -83,6 +83,19 @@ typedef enum {
   NATIONAL_CARD_NATIONAL_DISASTER
 } NationalEventCardType;
 
+// Government Regulations
+typedef enum {
+  REGULATION_NONE,
+  REGULATION_INCREASE_PROPERTY_TAX,
+  REGULATION_REDUCE_LOAN_INTEREST,
+  REGULATION_HOUSING_SUBSIDY,
+  REGULATION_LUXURY_PROPERTY_TAX,
+  REGULATION_RAILWAY_MODERNIZATION,
+  REGULATION_ELECTRICITY_TARIFF,
+  REGULATION_INSURANCE_REGULATION,
+  REGULATION_ANTI_SPECULATION
+} GovernmentRegulationType;
+
 // Group types for properties
 
 typedef enum {
@@ -128,6 +141,7 @@ typedef struct {
   int    rounds_without_maint;   // Counter. > 20 triggers structural damage.
   int    has_structural_damage;  // Flag: 1 after neglect damage fires.
   int    closed_rounds_left;     // National Event: Political Rally
+  int    forced_development_rounds_left; // Anti-Speculation Act deadline
 } PropertyData;
 
 // Railway data structure
@@ -219,6 +233,10 @@ typedef struct {
   // National Event Deck
   NationalEventCardType national_deck[20];
   int national_deck_index;
+  
+  // Government Regulations
+  GovernmentRegulationType active_regulation;
+  int regulation_rounds_left;
 } GameState;
 
 #endif

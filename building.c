@@ -149,6 +149,22 @@ void player_build_decision(GameState *game, int player_id) {
     return;
   }
 
+  // Handle Anti-Speculation Act forced development first for ALL players
+  for (int i = 0; i < TOTAL_SQUARES; i++) {
+    if (game->board[i].type == SQUARE_PROPERTY && 
+        game->board[i].owner_id == player_id &&
+        game->board[i].data.property.forced_development_rounds_left > 0) {
+      if (can_build_house(game, i)) {
+        double cost = get_dynamic_build_cost(game, i, 0);
+        if (game->players[player_index].money >= cost) {
+          printf("[%s] Forced to build on %s to comply with Anti-Speculation Act!\n", 
+                 game->players[player_index].name, game->board[i].name);
+          build_house(game, i);
+        }
+      }
+    }
+  }
+
   // ---------------------------------------------------------
   // Player 1 — Aggressive Investor
   // Builds max houses immediately after monopoly.
@@ -325,10 +341,10 @@ void player_build_decision(GameState *game, int player_id) {
       for (int i = 0; i < TOTAL_SQUARES; i++) {
         if (game->board[i].owner_id != player_id) continue;
 
-        // Build houses only if LKR 500 reserve maintained, UNLESS GOV_HOUSING is active
         if (can_build_house(game, i)) {
           double cost = get_dynamic_build_cost(game, i, 0);
-          int reserve_needed = (game->active_economic_event == EVENT_GOV_HOUSING) ? 0 : 500;
+          int reserve_needed = (game->active_economic_event == EVENT_GOV_HOUSING || 
+                                game->active_regulation == REGULATION_HOUSING_SUBSIDY) ? 0 : 500;
           
           if (game->players[player_index].money - cost >= reserve_needed) {
             build_house(game, i);

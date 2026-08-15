@@ -23,7 +23,9 @@ void handle_inflation(GameState *game);
 void update_property_market(GameState *game);
 const char* get_group_name(PropertyGroup group);
 void trigger_disaster(GameState *game);
+
 void update_insurance_durations(GameState *game);
+int find_player_index(GameState *game, int player_id);
 void attempt_disaster_repairs(GameState *game, int player_id);
 
 void trigger_economic_event(GameState *game);
@@ -215,6 +217,26 @@ int main(void) {
       }
     }
 
+    // Step 10.7: Anti-Speculation Act timers
+    for (int idx = 0; idx < TOTAL_SQUARES; idx++) {
+      if (game.board[idx].type == SQUARE_PROPERTY && game.board[idx].data.property.forced_development_rounds_left > 0) {
+        game.board[idx].data.property.forced_development_rounds_left--;
+        if (game.board[idx].data.property.forced_development_rounds_left == 0) {
+          if (game.board[idx].data.property.num_houses == 0 && !game.board[idx].data.property.has_hotel) {
+            int owner_id = game.board[idx].data.property.owner_id;
+            if (owner_id != -1) {
+              int p_idx = find_player_index(&game, owner_id);
+              if (p_idx != -1) {
+                printf("[ANTI-SPECULATION PENALTY] %s failed to develop %s in time! Fined LKR 5000.\n", 
+                       game.players[p_idx].name, game.board[idx].name);
+                game.players[p_idx].money -= 5000;
+              }
+            }
+          }
+        }
+      }
+    }
+
 
     // Step 11: Print active market conditions (Rule 36)
     if (game.market_rounds_left > 0) {
@@ -264,6 +286,26 @@ int main(void) {
       if (game.regional_card_rounds_left == 0) {
         game.active_regional_card = CARD_NONE;
         printf("[REGIONAL UPDATE] The regional development period has concluded.\n\n");
+      }
+    }
+
+    // Step 16: Government Regulations (every 20 rounds)
+    if ((j + 1) % 20 == 0) {
+      void trigger_government_regulation(GameState *game);
+      trigger_government_regulation(&game);
+    }
+    
+    // Step 17: Update Government Regulation Status
+    if (game.regulation_rounds_left > 0) {
+      game.regulation_rounds_left--;
+      const char* get_government_regulation_name(GovernmentRegulationType type);
+      printf("[REGULATION STATUS] Active: %s | Rounds Left: %d\n",
+             get_government_regulation_name(game.active_regulation),
+             game.regulation_rounds_left);
+             
+      if (game.regulation_rounds_left == 0) {
+        game.active_regulation = REGULATION_NONE;
+        printf("[REGULATION UPDATE] The government regulation has concluded.\n\n");
       }
     }
 

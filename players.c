@@ -364,13 +364,15 @@ int should_buy_railway(GameState *game, int player_id, int square_index) {
       purchase_railway(game, player_index, square_index);
     }
 
-  // Opportunistic Trader — buys railway if Rs.500 reserve is maintained
+  // Opportunistic Trader — buys railway if Rs.500 reserve is maintained, but aggressively buys if Railway Modernization is active
   } else if (player_id == 4) {
-    if (game->players[player_index].money - price < 500) {
+    int reserve_needed = (game->active_regulation == REGULATION_RAILWAY_MODERNIZATION) ? 0 : 500;
+    if (game->players[player_index].money - price < reserve_needed) {
       printf("%s cannot afford to buy this railway (reserve mindset)\n",
              game->players[player_index].name);
       run_auction(game, square_index, player_id);
     } else {
+      if (reserve_needed == 0) printf("[Opportunistic Trader] Aggressively buying railway due to Railway Modernization!\n");
       purchase_railway(game, player_index, square_index);
     }
   }
@@ -420,13 +422,15 @@ int should_buy_utility(GameState *game, int player_id, int square_index) {
       purchase_utility(game, player_index, square_index);
     }
 
-  // Opportunistic Trader — buys utility if Rs.500 reserve is maintained
+  // Opportunistic Trader — buys utility if Rs.500 reserve is maintained, aggressively buys if Electricity Tariff Revision is active
   } else if (player_id == 4) {
-    if (game->players[player_index].money - price < 500) {
+    int reserve_needed = (game->active_regulation == REGULATION_ELECTRICITY_TARIFF) ? 0 : 500;
+    if (game->players[player_index].money - price < reserve_needed) {
       printf("%s cannot afford to buy this utility (reserve mindset)\n",
              game->players[player_index].name);
       run_auction(game, square_index, player_id);
     } else {
+      if (reserve_needed == 0) printf("[Opportunistic Trader] Aggressively buying utility due to Electricity Tariff Revision!\n");
       purchase_utility(game, player_index, square_index);
     }
   }

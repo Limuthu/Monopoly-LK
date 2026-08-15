@@ -4,18 +4,40 @@
 double get_dynamic_price(GameState *game, int square_index);
 double get_dynamic_rent(GameState *game, int square_index);
 
+int count_undeveloped_properties(GameState *game, int player_id) {
+  int count = 0;
+  for (int i = 0; i < TOTAL_SQUARES; i++) {
+    if (game->board[i].type == SQUARE_PROPERTY && 
+        game->board[i].owner_id == player_id) {
+      if (game->board[i].data.property.num_houses == 0 && 
+          !game->board[i].data.property.has_hotel) {
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
 void purchase_property(GameState *game, int player_index, int square_index) {
   if (game->board[square_index].owner_id == -1) {
     double purchase_price = get_dynamic_price(game, square_index);
     game->players[player_index].money -= purchase_price;
 
     game->board[square_index].owner_id = game->players[player_index].id;
-    game->board[square_index].data.property.owner_id =
-        game->players[player_index].id;
+    game->board[square_index].data.property.owner_id = game->players[player_index].id;
 
     printf("%s purchased %s for LKR %.0lf\n", game->players[player_index].name,
-           game->board[square_index].name,
-           purchase_price);
+           game->board[square_index].name, purchase_price);
+
+    // Apply Anti-Speculation Act
+    if (game->active_regulation == REGULATION_ANTI_SPECULATION) {
+      int undeveloped = count_undeveloped_properties(game, game->players[player_index].id);
+      if (undeveloped > 3) {
+        game->board[square_index].data.property.forced_development_rounds_left = 5;
+        printf("[ANTI-SPECULATION ACT] %s owns >3 undeveloped properties! Must develop %s in 5 rounds.\n", 
+               game->players[player_index].name, game->board[square_index].name);
+      }
+    }
   }
 }
 
@@ -149,6 +171,10 @@ void pay_railway_rent(GameState *game, int player_index, int square_index) {
   if (game->active_regional_card == CARD_TRANSPORT_STRIKE) {
     rent *= 0.60; // Railway revenue reduced by 40%
   }
+  
+  if (game->active_regulation == REGULATION_RAILWAY_MODERNIZATION) {
+    rent *= 1.25; // Railway rent +25%
+  }
 
   game->players[player_index].money -= rent;
   game->players[owner_index].money += rent;
@@ -185,6 +211,10 @@ void pay_utility_rent(GameState *game, int player_index, int square_index, int d
   
   if (game->active_regional_card == CARD_WATER_SHORTAGE && square_index == 28) {
     rent *= 1.20; // Water utility revenue +20%
+  }
+  
+  if (game->active_regulation == REGULATION_ELECTRICITY_TARIFF) {
+    rent *= 1.20; // Utility rent +20%
   }
 
   game->players[player_index].money -= rent;
