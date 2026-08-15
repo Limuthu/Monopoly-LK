@@ -245,9 +245,12 @@ void player_build_decision(GameState *game, int player_id) {
   // Hotels as early as possible.
   // Prioritises expensive property groups over balanced portfolios.
   // No cash reserve — will build even if it drains almost all money.
+  // Sells lower-value properties to finance premium developments.
   // ---------------------------------------------------------
 
   else if (player_id == 3) {
+    void sell_asset_to_bank(GameState *game, int player_id, int square_index);
+    int p_idx = find_player_index(game, player_id);
 
     // Iterate groups from most expensive to cheapest
     PropertyGroup priority[] = {GROUP_DARK_BLUE, GROUP_GREEN,  GROUP_YELLOW,
@@ -268,12 +271,67 @@ void player_build_decision(GameState *game, int player_id) {
           if (can_build_house(game, i)) {
             build_house(game, i);
             built = 1;
+          } else {
+            // Check if it's a premium property and only failing due to money
+            if (priority[p] == GROUP_DARK_BLUE || priority[p] == GROUP_GREEN || priority[p] == GROUP_YELLOW) {
+              game->players[p_idx].money += 10000;
+              int could_build = can_build_house(game, i);
+              game->players[p_idx].money -= 10000;
+              
+              if (could_build) {
+                double cost = get_dynamic_build_cost(game, i, 0);
+                PropertyGroup cheap_groups[] = {GROUP_BROWN, GROUP_LIGHT_BLUE, GROUP_PINK, GROUP_ORANGE};
+                for (int c = 0; c < 4; c++) {
+                  for (int j = 0; j < TOTAL_SQUARES; j++) {
+                    if (game->players[p_idx].money >= cost) break;
+                    if (game->board[j].type == SQUARE_PROPERTY && game->board[j].owner_id == player_id &&
+                        game->board[j].data.property.group == cheap_groups[c] &&
+                        game->board[j].data.property.num_houses == 0 &&
+                        !game->board[j].data.property.has_hotel &&
+                        !game->board[j].data.property.is_loan_locked) {
+                      sell_asset_to_bank(game, player_id, j);
+                    }
+                  }
+                }
+                if (game->players[p_idx].money >= cost) {
+                  build_house(game, i);
+                  built = 1;
+                }
+              }
+            }
           }
 
           // Upgrade to hotel immediately when possible
           if (can_build_hotel(game, i)) {
             build_hotel(game, i);
             built = 1;
+          } else {
+            if (priority[p] == GROUP_DARK_BLUE || priority[p] == GROUP_GREEN || priority[p] == GROUP_YELLOW) {
+              game->players[p_idx].money += 10000;
+              int could_build = can_build_hotel(game, i);
+              game->players[p_idx].money -= 10000;
+              
+              if (could_build) {
+                double cost = get_dynamic_build_cost(game, i, 1);
+                PropertyGroup cheap_groups[] = {GROUP_BROWN, GROUP_LIGHT_BLUE, GROUP_PINK, GROUP_ORANGE};
+                for (int c = 0; c < 4; c++) {
+                  for (int j = 0; j < TOTAL_SQUARES; j++) {
+                    if (game->players[p_idx].money >= cost) break;
+                    if (game->board[j].type == SQUARE_PROPERTY && game->board[j].owner_id == player_id &&
+                        game->board[j].data.property.group == cheap_groups[c] &&
+                        game->board[j].data.property.num_houses == 0 &&
+                        !game->board[j].data.property.has_hotel &&
+                        !game->board[j].data.property.is_loan_locked) {
+                      sell_asset_to_bank(game, player_id, j);
+                    }
+                  }
+                }
+                if (game->players[p_idx].money >= cost) {
+                  build_hotel(game, i);
+                  built = 1;
+                }
+              }
+            }
           }
         }
       }

@@ -233,6 +233,7 @@ void pay_utility_rent(GameState *game, int player_index, int square_index, int d
 double get_dynamic_property_value(GameState *game, int square_index);
 double get_dynamic_build_cost(GameState *game, int square_index, int is_hotel);
 double get_dynamic_interest_rate(GameState *game);
+void run_auction(GameState *game, int square_index, int triggering_player_id);
 
 double calculate_net_worth(GameState *game, int player_id) {
   int player_index = find_player_index(game, player_id);
@@ -287,6 +288,9 @@ void declare_bankruptcy(GameState *game, int player_id) {
   printf("\n[BANKRUPTCY] %s has been declared BANKRUPT!\n", game->players[player_index].name);
   game->players[player_index].is_bankrupt = 1;
 
+  int seized_indices[TOTAL_SQUARES];
+  int seized_count = 0;
+
   for (int i = 0; i < TOTAL_SQUARES; i++) {
     if (game->board[i].owner_id == player_id) {
       game->board[i].owner_id = -1;
@@ -308,7 +312,13 @@ void declare_bankruptcy(GameState *game, int player_id) {
         game->board[i].data.utility.is_mortgaged = 0;
         game->board[i].data.utility.is_loan_locked = 0;
       }
+      seized_indices[seized_count++] = i;
     }
+  }
+
+  // Auction all liquidated assets
+  for (int s = 0; s < seized_count; s++) {
+    run_auction(game, seized_indices[s], player_id);
   }
 }
 

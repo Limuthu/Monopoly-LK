@@ -45,9 +45,14 @@ void attempt_disaster_repairs(GameState *game, int player_id) {
         game->board[i].data.property.is_damaged) {
       
       double cost = game->board[i].data.property.pending_repair_cost;
+      double payout = game->board[i].data.property.pending_insurance_payout;
       
-      if (game->players[player_index].money >= cost) {
+      if (game->players[player_index].money + payout >= cost) {
+        game->players[player_index].money += payout;
         game->players[player_index].money -= cost;
+        game->players[player_index].insurance_claims_receivable -= payout;
+        game->board[i].data.property.pending_insurance_payout = 0;
+
         game->board[i].data.property.is_damaged = 0;
         game->board[i].data.property.pending_repair_cost = 0;
         
@@ -158,8 +163,9 @@ void trigger_disaster(GameState *game) {
     printf("Insurance (%s) covers the disaster!\n", get_insurance_name(prop->insurance_tier));
     printf("Payout credited to %s: LKR %.0lf\n", game->players[owner_idx].name, compensation);
     
-    // Credit compensation
-    game->players[owner_idx].money += compensation;
+    // Set pending payout to act as receivable
+    prop->pending_insurance_payout = compensation;
+    game->players[owner_idx].insurance_claims_receivable += compensation;
   } else {
     if (prop->is_insured) {
       printf("Unfortunately, %s does not cover this type of disaster!\n", get_insurance_name(prop->insurance_tier));

@@ -11,9 +11,9 @@ double get_dynamic_mortgage(GameState *game, int square_index);
 double get_dynamic_interest_rate(GameState *game) {
   double rate = game->current_interest_rate;
   if (game->active_economic_event == EVENT_ECONOMIC_RECESSION) {
-    rate += 0.15; // Absolute +15%
+    rate = 0.15; // Recession
   } else if (game->active_economic_event == EVENT_STOCK_MARKET_BOOM) {
-    rate -= 0.10; // Absolute -10%
+    rate = 0.05; // Economic Boom
   }
   
   if (game->active_regulation == REGULATION_REDUCE_LOAN_INTEREST) {
@@ -429,6 +429,17 @@ void foreclosure(GameState *game, int player_id) {
   // Auction all seized assets (Rule: foreclosed assets go to auction)
   for (int s = 0; s < seized_count; s++) {
     run_auction(game, seized_indices[s], player_id);
+  }
+
+  // Check if player is completely ruined (Rule: declare bankruptcy if 0 assets remain)
+  int remaining_assets = 0;
+  for (int i = 0; i < TOTAL_SQUARES; i++) {
+    if (game->board[i].owner_id == player_id) remaining_assets++;
+  }
+  
+  if (remaining_assets == 0 && game->players[idx].money <= 0) {
+    void declare_bankruptcy(GameState *game, int player_id);
+    declare_bankruptcy(game, player_id);
   }
 }
 

@@ -128,6 +128,7 @@ typedef struct {
   int insurance_rounds_left;   // Starts at 20 when purchased
   int is_damaged;              // Flag: 1 if disaster struck and hasn't been repaired
   double pending_repair_cost;  // Stores the cost needed to fix the disaster
+  double pending_insurance_payout; // The claim payout waiting to be received upon repair
   int is_loan_locked;
   PropertyGroup group;
 

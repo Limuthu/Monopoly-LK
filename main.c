@@ -117,7 +117,16 @@ int main(void) {
 
   //--------------------GAME ROUNDS--------------------
   int j = 0;
-  while (j < 300) {
+  while (j < 500) {
+    int solvent_count = 0;
+    for (int k = 0; k < game.num_players; k++) {
+      if (!game.players[k].is_bankrupt) solvent_count++;
+    }
+    if (solvent_count <= 1) {
+      printf("\n[GAME END] Only one player remains solvent!\n");
+      break;
+    }
+
     printf("---Round %d---\n", j + 1);
     for (int i = 0; i < game.num_players; i++) {
       if (game.players[i].is_bankrupt)
@@ -311,6 +320,27 @@ int main(void) {
 
     game.current_turn = game.current_turn + 1;
     j++;
+  }
+
+  printf("\n========== GAME OVER ==========\n");
+  int winner_index = -1;
+  double max_nw = -99999999;
+  double calculate_net_worth(GameState *game, int player_id);
+  
+  for (int k = 0; k < game.num_players; k++) {
+    if (game.players[k].is_bankrupt) continue;
+    double nw = calculate_net_worth(&game, game.players[k].id);
+    printf("%s's Final Net Worth: LKR %.0lf\n", game.players[k].name, nw);
+    if (nw > max_nw) {
+      max_nw = nw;
+      winner_index = k;
+    }
+  }
+  
+  if (winner_index != -1) {
+    printf("\n*** THE WINNER IS %s WITH A NET WORTH OF LKR %.0lf! ***\n", game.players[winner_index].name, max_nw);
+  } else {
+    printf("\n*** EVERYONE IS BANKRUPT! NO WINNER! ***\n");
   }
 
   return 0;

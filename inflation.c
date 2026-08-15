@@ -13,13 +13,13 @@ void handle_inflation(GameState *game) {
   game->current_inflation_rate = (double)selected_rate_pct / 100.0;
   double multiplier = 1.0 + game->current_inflation_rate;
 
-  // 2. Map inflation to baseline interest rate
+  // 2. Map inflation to baseline interest rate (Table 9)
   if (selected_rate_pct >= 8) {
-    game->current_interest_rate = 0.12;
-  } else if (selected_rate_pct >= 2) {
-    game->current_interest_rate = 0.10;
+    game->current_interest_rate = 0.12; // High Inflation
+  } else if (selected_rate_pct >= 5) {
+    game->current_interest_rate = 0.10; // Moderate Inflation
   } else {
-    game->current_interest_rate = 0.08;
+    game->current_interest_rate = 0.08; // Stable Economy
   }
 
   // Announce the inflation cycle
