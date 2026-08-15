@@ -13,6 +13,10 @@ void player_loan_decision(GameState *game, int player_id);
 void handle_insurance_landing(GameState *game, int player_index);
 void draw_national_card(GameState *game, int player_index);
 
+double calculate_net_worth(GameState *game, int player_id);
+int attempt_raise_funds(GameState *game, int player_id, double amount_needed);
+void declare_bankruptcy(GameState *game, int player_id);
+
 void handle_landing(GameState *game, int player_position, int player_id, int dice_roll) {
 
   int visitor_index = find_player_index(game, player_id);
@@ -61,6 +65,28 @@ void handle_landing(GameState *game, int player_position, int player_id, int dic
 
   case SQUARE_TAX:
     printf("Landed on Tax\n");
+    double net_worth = calculate_net_worth(game, player_id);
+    double rate = 0.15;
+    if (game->active_regulation == REGULATION_INCREASE_PROPERTY_TAX) {
+      rate = 0.225;
+      printf("[REGULATION ACTIVE] Income Tax increased to 22.5%%!\n");
+    }
+    double tax_amount = net_worth * rate;
+    printf("%s's Net Worth is LKR %.0lf. Income Tax is LKR %.0lf (%.1lf%%)\n", 
+           game->players[visitor_index].name, net_worth, tax_amount, rate * 100);
+
+    if (game->players[visitor_index].money >= tax_amount) {
+      game->players[visitor_index].money -= tax_amount;
+      printf("%s paid the tax.\n", game->players[visitor_index].name);
+    } else {
+      printf("%s cannot afford the tax! Attempting to raise funds...\n", game->players[visitor_index].name);
+      if (attempt_raise_funds(game, player_id, tax_amount)) {
+        game->players[visitor_index].money -= tax_amount;
+        printf("%s successfully raised funds and paid the tax.\n", game->players[visitor_index].name);
+      } else {
+        declare_bankruptcy(game, player_id);
+      }
+    }
     break;
   case SQUARE_INSURANCE:
     handle_insurance_landing(game, visitor_index);

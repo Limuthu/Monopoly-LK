@@ -195,6 +195,8 @@ typedef struct {
   int loan_start_round;
   double loan_interest_rate;
   int is_bankrupt;
+  double insurance_claims_receivable;
+  double taxes_due;
 
   // National Event Tracking
   NationalEventCardType active_national_card;

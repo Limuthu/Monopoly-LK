@@ -225,3 +225,151 @@ void pay_utility_rent(GameState *game, int player_index, int square_index, int d
          game->players[owner_index].name, dice_roll,
          game->players[owner_index].name, owned);
 }
+
+// =============================================================
+// INCOME TAX SUPPORT FUNCTIONS
+// =============================================================
+
+double get_dynamic_property_value(GameState *game, int square_index);
+double get_dynamic_build_cost(GameState *game, int square_index, int is_hotel);
+double get_dynamic_interest_rate(GameState *game);
+
+double calculate_net_worth(GameState *game, int player_id) {
+  int player_index = find_player_index(game, player_id);
+  if (player_index == -1) return 0;
+
+  double cash = game->players[player_index].money;
+  double property_value = 0;
+  double building_value = 0;
+  double railway_value = 0;
+  double utility_value = 0;
+
+  for (int i = 0; i < TOTAL_SQUARES; i++) {
+    if (game->board[i].owner_id == player_id) {
+      if (game->board[i].type == SQUARE_PROPERTY) {
+        property_value += get_dynamic_property_value(game, i);
+        
+        int houses = game->board[i].data.property.num_houses;
+        int hotels = game->board[i].data.property.has_hotel;
+        
+        double current_house_cost = get_dynamic_build_cost(game, i, 0);
+        double current_hotel_cost = get_dynamic_build_cost(game, i, 1);
+        
+        double raw_building_val = (houses * current_house_cost) + (hotels * current_hotel_cost);
+        
+        // Apply depreciation based on physical condition
+        double condition_pct = game->board[i].data.property.building_condition / 100.0;
+        building_value += (raw_building_val * condition_pct);
+        
+      } else if (game->board[i].type == SQUARE_RAILWAY) {
+        railway_value += game->board[i].data.railway.price;
+      } else if (game->board[i].type == SQUARE_UTILITY) {
+        utility_value += game->board[i].data.utility.price;
+      }
+    }
+  }
+
+  double insurance_receivable = game->players[player_index].insurance_claims_receivable;
+  double outstanding_loans = game->players[player_index].loan_amount;
+  double accrued_interest = game->players[player_index].loan_amount * get_dynamic_interest_rate(game);
+  double taxes_due = game->players[player_index].taxes_due;
+
+  double net_worth = cash + property_value + building_value + railway_value + utility_value + 
+                     insurance_receivable - outstanding_loans - accrued_interest - taxes_due;
+
+  return net_worth;
+}
+
+void declare_bankruptcy(GameState *game, int player_id) {
+  int player_index = find_player_index(game, player_id);
+  if (player_index == -1) return;
+
+  printf("\n[BANKRUPTCY] %s has been declared BANKRUPT!\n", game->players[player_index].name);
+  game->players[player_index].is_bankrupt = 1;
+
+  for (int i = 0; i < TOTAL_SQUARES; i++) {
+    if (game->board[i].owner_id == player_id) {
+      game->board[i].owner_id = -1;
+      if (game->board[i].type == SQUARE_PROPERTY) {
+        game->board[i].data.property.owner_id = -1;
+        game->board[i].data.property.num_houses = 0;
+        game->board[i].data.property.has_hotel = 0;
+        game->board[i].data.property.is_mortgaged = 0;
+        game->board[i].data.property.is_insured = 0;
+        game->board[i].data.property.insurance_rounds_left = 0;
+        game->board[i].data.property.is_loan_locked = 0;
+        game->board[i].data.property.forced_development_rounds_left = 0;
+      } else if (game->board[i].type == SQUARE_RAILWAY) {
+        game->board[i].data.railway.owner_id = -1;
+        game->board[i].data.railway.is_mortgaged = 0;
+        game->board[i].data.railway.is_loan_locked = 0;
+      } else if (game->board[i].type == SQUARE_UTILITY) {
+        game->board[i].data.utility.owner_id = -1;
+        game->board[i].data.utility.is_mortgaged = 0;
+        game->board[i].data.utility.is_loan_locked = 0;
+      }
+    }
+  }
+}
+
+void sell_asset_to_bank(GameState *game, int player_id, int square_index) {
+  int player_index = find_player_index(game, player_id);
+  if (player_index == -1) return;
+  if (game->board[square_index].owner_id != player_id) return;
+
+  double sell_value = 0;
+  if (game->board[square_index].type == SQUARE_PROPERTY) {
+    sell_value = game->board[square_index].data.property.price * 0.5;
+    game->board[square_index].data.property.owner_id = -1;
+    game->board[square_index].data.property.num_houses = 0;
+    game->board[square_index].data.property.has_hotel = 0;
+    game->board[square_index].data.property.is_mortgaged = 0;
+    game->board[square_index].data.property.is_insured = 0;
+    game->board[square_index].data.property.insurance_rounds_left = 0;
+    game->board[square_index].data.property.is_loan_locked = 0;
+  } else if (game->board[square_index].type == SQUARE_RAILWAY) {
+    sell_value = game->board[square_index].data.railway.price * 0.5;
+    game->board[square_index].data.railway.owner_id = -1;
+    game->board[square_index].data.railway.is_mortgaged = 0;
+    game->board[square_index].data.railway.is_loan_locked = 0;
+  } else if (game->board[square_index].type == SQUARE_UTILITY) {
+    sell_value = game->board[square_index].data.utility.price * 0.5;
+    game->board[square_index].data.utility.owner_id = -1;
+    game->board[square_index].data.utility.is_mortgaged = 0;
+    game->board[square_index].data.utility.is_loan_locked = 0;
+  }
+
+  game->players[player_index].money += sell_value;
+  game->board[square_index].owner_id = -1;
+  printf("[ASSET LIQUIDATION] %s sold %s to the Bank for LKR %.0lf\n", 
+         game->players[player_index].name, game->board[square_index].name, sell_value);
+}
+
+int attempt_raise_funds(GameState *game, int player_id, double amount_needed) {
+  int player_index = find_player_index(game, player_id);
+  if (player_index == -1) return 0;
+
+  // Keep selling assets until we have enough money, or we run out of assets
+  for (int i = 0; i < TOTAL_SQUARES; i++) {
+    if (game->players[player_index].money >= amount_needed) {
+      return 1; // Successfully raised enough
+    }
+    if (game->board[i].owner_id == player_id) {
+      // Don't sell properties that are locked as collateral for loans
+      int is_locked = 0;
+      if (game->board[i].type == SQUARE_PROPERTY) is_locked = game->board[i].data.property.is_loan_locked;
+      else if (game->board[i].type == SQUARE_RAILWAY) is_locked = game->board[i].data.railway.is_loan_locked;
+      else if (game->board[i].type == SQUARE_UTILITY) is_locked = game->board[i].data.utility.is_loan_locked;
+      
+      if (!is_locked) {
+        sell_asset_to_bank(game, player_id, i);
+      }
+    }
+  }
+
+  // Check one last time
+  if (game->players[player_index].money >= amount_needed) {
+    return 1;
+  }
+  return 0; // Failed to raise enough funds
+}
