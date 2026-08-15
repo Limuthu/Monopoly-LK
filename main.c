@@ -29,6 +29,9 @@ void attempt_disaster_repairs(GameState *game, int player_id);
 void trigger_economic_event(GameState *game);
 const char* get_economic_event_name(EconomicEventType type);
 
+void trigger_regional_development(GameState *game);
+const char* get_regional_card_name(RegionalCardType type);
+
 void handle_jail_turn(GameState *game, int player_index, int *dice_roll_out, int *moved_this_turn) {
   Player *p = &game->players[player_index];
   p->jail_turns++;
@@ -207,6 +210,24 @@ int main(void) {
       if (game.economic_event_rounds_left == 0) {
         game.active_economic_event = EVENT_NONE;
         printf("[ECONOMIC UPDATE] The national economic event has concluded.\n\n");
+      }
+    }
+    
+    // Step 14: Regional Development (every 15 rounds)
+    if ((j + 1) % 15 == 0) {
+      trigger_regional_development(&game);
+    }
+    
+    // Step 15: Update Regional Development Status
+    if (game.regional_card_rounds_left > 0) {
+      game.regional_card_rounds_left--;
+      printf("[REGIONAL STATUS] Active Card: %s | Rounds Left: %d\n",
+             get_regional_card_name(game.active_regional_card),
+             game.regional_card_rounds_left);
+             
+      if (game.regional_card_rounds_left == 0) {
+        game.active_regional_card = CARD_NONE;
+        printf("[REGIONAL UPDATE] The regional development period has concluded.\n\n");
       }
     }
 

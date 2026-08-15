@@ -104,6 +104,23 @@ double get_dynamic_price(GameState *game, int square_index) {
     base *= 1.20;
   }
   
+  // 3. Apply Regional Development Modifiers
+  if (game->active_regional_card == CARD_PORT_CITY_EXPANSION && (square_index == 1 || square_index == 3)) { // Port City Expansion: Pettah and Maradana (Values +25%)
+    base *= 1.25;
+  } else if (game->active_regional_card == CARD_IT_INDUSTRY_GROWTH && group == GROUP_PINK) {
+    base *= 1.20;
+  } else if (game->active_regional_card == CARD_NORTHERN_DEV_PROGRAMME && group == GROUP_GREEN) {
+    base *= 1.30;
+  } else if (game->active_regional_card == CARD_TEA_EXPORT_BOOM && square_index == 37) { // Nuwara Eliya
+    base *= 1.35;
+  } else if (game->active_regional_card == CARD_UNIVERSITY_CITY_GROWTH && (square_index == 21 || square_index == 23)) { // Kandy City, Peradeniya
+    base *= 1.20;
+  } else if (game->active_regional_card == CARD_FLOOD_DAMAGE && is_coastal(group)) {
+    base *= 0.80;
+  } else if (game->active_regional_card == CARD_WATER_SHORTAGE && (square_index == 26 || square_index == 27 || square_index == 29)) { // Surrounding Water Board
+    base *= 0.90;
+  }
+
   return base;
 }
 
@@ -144,6 +161,15 @@ double get_dynamic_rent(GameState *game, int square_index) {
     if (game->board[square_index].data.property.has_hotel) {
       base *= 0.5; // Hotel rent drops 50%
     }
+  }
+  
+  // 3. Apply Regional Development Modifiers
+  if (game->active_regional_card == CARD_SOUTHERN_TOURISM_BOOM && group == GROUP_YELLOW) {
+    base *= 1.40;
+  } else if (game->active_regional_card == CARD_AIRPORT_EXPANSION && group == GROUP_ORANGE) {
+    base *= 1.30;
+  } else if (game->active_regional_card == CARD_BEACH_POLLUTION && group == GROUP_YELLOW) {
+    base *= 0.70;
   }
   
   return base;

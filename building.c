@@ -276,13 +276,21 @@ void player_build_decision(GameState *game, int player_id) {
 
     // Housing Subsidy check is implemented natively below with get_dynamic_build_cost
 
-    // Sell properties in a declining group or coastal properties during Heavy Monsoon
+    // Sell properties in a declining group, coastal properties during Heavy Monsoon, or properties hit by regional debuffs
     for (int i = 0; i < TOTAL_SQUARES; i++) {
       if (game->board[i].owner_id == player_id && game->board[i].type == SQUARE_PROPERTY) {
         PropertyGroup grp = game->board[i].data.property.group;
         int is_coastal = (grp == GROUP_YELLOW || grp == GROUP_LIGHT_BLUE || grp == GROUP_ORANGE);
         
-        if (grp == game->market_decline_group || (game->active_economic_event == EVENT_HEAVY_MONSOON && is_coastal)) {
+        int has_market_decline = (grp == game->market_decline_group);
+        int has_monsoon_decline = (game->active_economic_event == EVENT_HEAVY_MONSOON && is_coastal);
+        int has_regional_decline = 0;
+        
+        if (game->active_regional_card == CARD_BEACH_POLLUTION && grp == GROUP_YELLOW) has_regional_decline = 1;
+        if (game->active_regional_card == CARD_FLOOD_DAMAGE && is_coastal) has_regional_decline = 1;
+        if (game->active_regional_card == CARD_WATER_SHORTAGE && (i == 26 || i == 27 || i == 29)) has_regional_decline = 1;
+
+        if (has_market_decline || has_monsoon_decline || has_regional_decline) {
           // Sell property back to the bank for half its base price
           double sell_price = game->board[i].data.property.price * 0.5;
           game->players[player_index].money += sell_price;
@@ -291,7 +299,10 @@ void player_build_decision(GameState *game, int player_id) {
           game->board[i].data.property.num_houses = 0;
           game->board[i].data.property.has_hotel = 0;
           
-          if (game->active_economic_event == EVENT_HEAVY_MONSOON && is_coastal) {
+          if (has_regional_decline) {
+            printf("[Opportunistic Trader] Sold %s back to the bank for LKR %.0lf to avoid Regional Development debuff.\n", 
+                   game->board[i].name, sell_price);
+          } else if (has_monsoon_decline) {
             printf("[Opportunistic Trader] Sold %s back to the bank for LKR %.0lf to avoid Heavy Monsoon damage.\n", 
                    game->board[i].name, sell_price);
           } else {

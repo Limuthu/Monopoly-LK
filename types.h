@@ -41,6 +41,23 @@ typedef enum {
   EVENT_POLITICAL_UNREST
 } EconomicEventType;
 
+// Regional Development Cards
+typedef enum {
+  CARD_NONE,
+  CARD_SOUTHERN_TOURISM_BOOM,
+  CARD_PORT_CITY_EXPANSION,
+  CARD_IT_INDUSTRY_GROWTH,
+  CARD_NORTHERN_DEV_PROGRAMME,
+  CARD_TEA_EXPORT_BOOM,
+  CARD_AIRPORT_EXPANSION,
+  CARD_UNIVERSITY_CITY_GROWTH,
+  CARD_BEACH_POLLUTION,
+  CARD_FLOOD_DAMAGE,
+  CARD_TRANSPORT_STRIKE,
+  CARD_ELECTRICITY_TARIFF,
+  CARD_WATER_SHORTAGE
+} RegionalCardType;
+
 // Group types for properties
 
 typedef enum {
@@ -160,6 +177,10 @@ typedef struct {
   // Economic Events
   EconomicEventType active_economic_event;
   int economic_event_rounds_left;
+
+  // Regional Development
+  RegionalCardType active_regional_card;
+  int regional_card_rounds_left;
 } GameState;
 
 #endif

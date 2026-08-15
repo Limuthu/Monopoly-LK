@@ -140,6 +140,10 @@ void pay_railway_rent(GameState *game, int player_index, int square_index) {
   if (game->active_economic_event == EVENT_FUEL_CRISIS) {
     rent *= 2.0; // Railway rent doubles
   }
+  
+  if (game->active_regional_card == CARD_TRANSPORT_STRIKE) {
+    rent *= 0.60; // Railway revenue reduced by 40%
+  }
 
   game->players[player_index].money -= rent;
   game->players[owner_index].money += rent;
@@ -161,9 +165,18 @@ void pay_utility_rent(GameState *game, int player_index, int square_index, int d
   int owned = count_owned_utilities(game, owner_id);
   double rent = 0;
   if (owned > 0 && owned <= 2) {
-    rent = game->utility_rent_base[owned - 1] * dice_roll;
+    double multiplier = game->utility_rent_base[owned - 1];
+    rent = dice_roll * multiplier;
   }
   
+  if (game->active_regional_card == CARD_ELECTRICITY_TARIFF) {
+    rent *= 1.25; // Utility rent +25%
+  }
+  
+  if (game->active_regional_card == CARD_WATER_SHORTAGE && square_index == 28) {
+    rent *= 1.20; // Water utility revenue +20%
+  }
+
   game->players[player_index].money -= rent;
   game->players[owner_index].money += rent;
 

@@ -165,6 +165,22 @@ void purchase_utility(GameState *game, int player_index, int square_index);
 int count_owned_in_group(GameState *game, int player_id, int square_index);
 int group_size(GameState *game, int square_index);
 int find_player_index(GameState *game, int player_id);
+double get_dynamic_mortgage(GameState *game, int square_index);
+
+int is_regionally_buffed(GameState *game, int square_index) {
+  if (game->board[square_index].type != SQUARE_PROPERTY) return 0;
+  PropertyGroup group = game->board[square_index].data.property.group;
+  if (game->active_regional_card == CARD_PORT_CITY_EXPANSION && (square_index == 1 || square_index == 3)) return 1;
+  if (game->active_regional_card == CARD_IT_INDUSTRY_GROWTH && group == GROUP_PINK) return 1;
+  if (game->active_regional_card == CARD_NORTHERN_DEV_PROGRAMME && group == GROUP_GREEN) return 1;
+  if (game->active_regional_card == CARD_TEA_EXPORT_BOOM && square_index == 37) return 1;
+  if (game->active_regional_card == CARD_UNIVERSITY_CITY_GROWTH && (square_index == 21 || square_index == 23)) return 1;
+  if (game->active_regional_card == CARD_SOUTHERN_TOURISM_BOOM && group == GROUP_YELLOW) return 1;
+  if (game->active_regional_card == CARD_AIRPORT_EXPANSION && group == GROUP_ORANGE) return 1;
+  return 0;
+}
+
+// =============================================================
 
 int should_buy(GameState *game, int player_id, int square_index) {
 
@@ -273,6 +289,10 @@ int should_buy(GameState *game, int player_id, int square_index) {
       printf("%s cannot afford to buy this property (reserve mindset)\n", game->players[player_index].name);
       run_auction(game, square_index, player_id);
     
+    } else if (is_regionally_buffed(game, square_index)) {
+      printf("[Opportunistic Trader] Purchasing %s aggressively due to projected appreciation from Regional Development!\n", game->board[square_index].name);
+      purchase_property(game, player_index, square_index);
+      
     } else if (game->board[square_index].data.property.base_rent * 100 < game->board[square_index].data.property.price * 7) {
       printf("%s skips: ROI is bad (rent/price ratio too low)\n", game->players[player_index].name);
       run_auction(game, square_index, player_id);
