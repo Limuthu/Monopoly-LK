@@ -16,6 +16,9 @@ void player_build_decision(GameState *game, int player_id);
 void apply_interest_all(GameState *game);
 void check_loan_defaults(GameState *game);
 void roll_two_dice(int *d1, int *d2);
+void apply_property_depreciation(GameState *game);
+void apply_building_depreciation(GameState *game);
+void player_maintenance_decision(GameState *game, int player_id);
 
 void handle_jail_turn(GameState *game, int player_index, int *dice_roll_out, int *moved_this_turn) {
   Player *p = &game->players[player_index];
@@ -100,12 +103,15 @@ int main(void) {
 
   //--------------------GAME ROUNDS--------------------
   int j = 0;
-  while (j < 100) {
+  while (j < 300) {
     printf("---Round %d---\n", j + 1);
     for (int i = 0; i < game.num_players; i++) {
 
       // Skip bankrupt players
       if (game.players[i].is_bankrupt) continue;
+
+      // Step 0: Pre-turn Maintenance Decision
+      player_maintenance_decision(&game, game.players[i].id);
 
       int dice_roll = 0;
       int moved_this_turn = 1;
@@ -135,6 +141,10 @@ int main(void) {
 
     // Step 5: Check if any loans have expired — trigger foreclosure
     check_loan_defaults(&game);
+
+    // Step 6: Depreciation
+    apply_property_depreciation(&game);
+    apply_building_depreciation(&game);
 
     game.current_turn = game.current_turn + 1;
     j++;

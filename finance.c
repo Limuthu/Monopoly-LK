@@ -81,6 +81,19 @@ void pay_property_rent(GameState *game, int player_index, int square_index) {
     rent = base_rent * 2;
   }
 
+  // 1. Apply property depreciation to base_rent
+  rent = rent * (1.0 - game->board[square_index].data.property.depreciation_pct / 100.0);
+
+  // 2. Apply building condition multiplier
+  double get_condition_multiplier(double condition);
+  double condition_mult = get_condition_multiplier(game->board[square_index].data.property.building_condition);
+  rent = rent * condition_mult;
+
+  if (condition_mult == 0.0) {
+    printf("No rent, building is closed due to poor condition!\n");
+    return;
+  }
+
   game->players[player_index].money -= rent;
   game->players[owner_index].money += rent;
 

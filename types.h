@@ -49,6 +49,16 @@ typedef struct {
   int is_insured;
   int is_loan_locked;
   PropertyGroup group;
+
+  // Property Depreciation (Rule-LK 15, 16, 17)
+  int    prop_age;               // Rounds since last renovation
+  double depreciation_pct;       // Total % lost so far (max 30.0)
+  double base_rent_original;     // Snapshot of rent at init, used to restore after renovation
+
+  // Building Depreciation (Rule-LK 25, 26, 27, 28, 29)
+  double building_condition;     // 0.0 to 100.0. Starts at 100. Drops 2/round.
+  int    rounds_without_maint;   // Counter. > 20 triggers structural damage.
+  int    has_structural_damage;  // Flag: 1 after neglect damage fires.
 } PropertyData;
 
 // Railway data structure

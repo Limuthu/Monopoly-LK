@@ -294,3 +294,67 @@ void player_build_decision(GameState *game, int player_id) {
     }
   }
 }
+
+// External declarations for depreciation functions
+void renovate_property(GameState *game, int square_index, int player_index);
+void do_building_maintenance(GameState *game, int square_index, int player_index);
+void renovate_building(GameState *game, int square_index, int player_index);
+
+void player_maintenance_decision(GameState *game, int player_id) {
+  int player_index = find_player_index(game, player_id);
+  if (player_index == -1) return;
+
+  for (int i = 0; i < TOTAL_SQUARES; i++) {
+    if (game->board[i].type != SQUARE_PROPERTY) continue;
+    if (game->board[i].owner_id != player_id) continue;
+
+    PropertyData *prop = &game->board[i].data.property;
+
+    // 1. Structural Damage Renovation (Priority 1)
+    if (prop->has_structural_damage) {
+      if (player_id == 1 || player_id == 2) {
+        // Aggressive Investor and Conservative Banker always renovate immediately
+        renovate_building(game, i, player_index);
+      } else if (player_id == 3) {
+        // Risk taker waits until absolutely forced (structural damage has happened, so forced to fix now to get rent back)
+        renovate_building(game, i, player_index);
+      } else if (player_id == 4) {
+        // Opportunistic Trader renovates if reserve is kept
+        double cost = prop->has_hotel ? prop->hotel_cost * 0.25 : prop->house_cost * 0.25;
+        if (game->players[player_index].money - cost >= 500) {
+          renovate_building(game, i, player_index);
+        }
+      }
+    }
+
+    // 2. Routine Maintenance
+    if (prop->building_condition < 100.0 && !prop->has_structural_damage && (prop->num_houses > 0 || prop->has_hotel)) {
+      if (player_id == 1 || player_id == 2) {
+        // Always maintains if possible
+        do_building_maintenance(game, i, player_index);
+      } else if (player_id == 3) {
+        // Risk taker completely ignores maintenance
+      } else if (player_id == 4) {
+        // Maintains if reserve > 500
+        double cost = prop->has_hotel ? prop->hotel_cost * 0.08 : (prop->house_cost * 0.05) * prop->num_houses;
+        if (game->players[player_index].money - cost >= 500) {
+          do_building_maintenance(game, i, player_index);
+        }
+      }
+    }
+
+    // 3. Property Renovation (Land)
+    if (prop->depreciation_pct > 0.0) {
+      if (player_id == 1) {
+        // Ignores land depreciation
+      } else if (player_id == 2 && prop->depreciation_pct >= 10.0) {
+        renovate_property(game, i, player_index);
+      } else if (player_id == 3 && prop->depreciation_pct >= 30.0) {
+        renovate_property(game, i, player_index);
+      } else if (player_id == 4 && prop->depreciation_pct >= 15.0) {
+        renovate_property(game, i, player_index);
+      }
+    }
+  }
+}
+
