@@ -22,6 +22,9 @@ void player_maintenance_decision(GameState *game, int player_id);
 void handle_inflation(GameState *game);
 void update_property_market(GameState *game);
 const char* get_group_name(PropertyGroup group);
+void trigger_disaster(GameState *game);
+void update_insurance_durations(GameState *game);
+void attempt_disaster_repairs(GameState *game, int player_id);
 
 void handle_jail_turn(GameState *game, int player_index, int *dice_roll_out, int *moved_this_turn) {
   Player *p = &game->players[player_index];
@@ -109,12 +112,16 @@ int main(void) {
   while (j < 300) {
     printf("---Round %d---\n", j + 1);
     for (int i = 0; i < game.num_players; i++) {
+      if (game.players[i].is_bankrupt)
+        continue;
 
-      // Skip bankrupt players
-      if (game.players[i].is_bankrupt) continue;
-
-      // Step 0: Pre-turn Maintenance Decision
+      // Pre-turn Maintenance Decision
       player_maintenance_decision(&game, game.players[i].id);
+
+      printf("----- %s's Turn -----\n", game.players[i].name);
+
+      // Step 0: Check if player can pay off any disaster damages
+      attempt_disaster_repairs(&game, game.players[i].id);
 
       int dice_roll = 0;
       int moved_this_turn = 1;
@@ -158,8 +165,16 @@ int main(void) {
     if ((j + 1) % 10 == 0) {
       update_property_market(&game);
     }
+    
+    // Step 9: Disasters (every 10 rounds)
+    if ((j + 1) % 10 == 0) {
+      trigger_disaster(&game);
+    }
+    
+    // Step 10: Update Insurance Policies
+    update_insurance_durations(&game);
 
-    // Step 9: Print active market conditions (Rule 36)
+    // Step 11: Print active market conditions (Rule 36)
     if (game.market_rounds_left > 0) {
       game.market_rounds_left--;
       printf("\n[MARKET STATUS] Boom: %s Group | Decline: %s Group | Rounds Left: %d\n",

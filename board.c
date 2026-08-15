@@ -582,7 +582,7 @@ void init_board(GameState *game) {
   game->board[39].data.property.is_insured = 0;
   game->board[39].data.property.is_loan_locked = 0;
 
-  // Initialize depreciation fields for all properties
+  // Initialize depreciation & insurance fields for all properties
   for (int i = 0; i < TOTAL_SQUARES; i++) {
     if (game->board[i].type == SQUARE_PROPERTY) {
       game->board[i].data.property.prop_age = 0;
@@ -591,6 +591,11 @@ void init_board(GameState *game) {
       game->board[i].data.property.building_condition = 100.0;
       game->board[i].data.property.rounds_without_maint = 0;
       game->board[i].data.property.has_structural_damage = 0;
+      
+      game->board[i].data.property.insurance_tier = 0;
+      game->board[i].data.property.insurance_rounds_left = 0;
+      game->board[i].data.property.is_damaged = 0;
+      game->board[i].data.property.pending_repair_cost = 0.0;
     }
   }
 

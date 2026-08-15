@@ -60,6 +60,11 @@ void pay_property_rent(GameState *game, int player_index, int square_index) {
     return;
   }
 
+  if (game->board[square_index].data.property.is_damaged == 1) {
+    printf("No rent, property is damaged from a disaster and needs repairs!\n");
+    return;
+  }
+
   int owner_id = game->board[square_index].owner_id;
   int owner_index = find_player_index(game, owner_id);
 

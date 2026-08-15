@@ -10,6 +10,7 @@ void pay_railway_rent(GameState *game, int player_index, int square_index);
 void pay_utility_rent(GameState *game, int player_index, int square_index, int dice_roll);
 int find_player_index(GameState *game, int player_id);
 void player_loan_decision(GameState *game, int player_id);
+void handle_insurance_landing(GameState *game, int player_index);
 
 void handle_landing(GameState *game, int player_position, int player_id, int dice_roll) {
 
@@ -61,7 +62,7 @@ void handle_landing(GameState *game, int player_position, int player_id, int dic
     printf("Landed on Tax\n");
     break;
   case SQUARE_INSURANCE:
-    printf("Landed on Insurance\n");
+    handle_insurance_landing(game, visitor_index);
     break;
   case SQUARE_EVENT:
     printf("Landed on Event\n");

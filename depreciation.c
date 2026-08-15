@@ -30,6 +30,9 @@ void apply_building_depreciation(GameState *game) {
 
     PropertyData *prop = &game->board[i].data.property;
     
+    // Skip properties currently completely destroyed by a disaster
+    if (prop->is_damaged) continue;
+    
     if (prop->num_houses > 0 || prop->has_hotel) {
       prop->building_condition -= 2.0;
       if (prop->building_condition < 0.0) prop->building_condition = 0.0;

@@ -19,6 +19,15 @@ typedef enum {
   SQUARE_INSURANCE
 } SquareType;
 
+// Disaster types
+typedef enum {
+  DISASTER_FIRE,
+  DISASTER_FLOOD,
+  DISASTER_RIOT,
+  DISASTER_BUILDING_COLLAPSE, // Handled identically to Earthquake
+  DISASTER_ELECTRICAL_FAILURE // Handled identically to Vandalism
+} DisasterType;
+
 // Group types for properties
 
 typedef enum {
@@ -47,6 +56,10 @@ typedef struct {
 
   int is_mortgaged;
   int is_insured;
+  int insurance_tier;          // 0 = None, 1 = Basic, 2 = Comprehensive, 3 = Bus. Interruption
+  int insurance_rounds_left;   // Starts at 20 when purchased
+  int is_damaged;              // Flag: 1 if disaster struck and hasn't been repaired
+  double pending_repair_cost;  // Stores the cost needed to fix the disaster
   int is_loan_locked;
   PropertyGroup group;
 
