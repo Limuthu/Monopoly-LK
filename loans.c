@@ -6,6 +6,7 @@
 
 int find_player_index(GameState *game, int player_id);
 int has_monopoly(GameState *game, int player_id, int square_index);
+double get_dynamic_mortgage(GameState *game, int square_index);
 
 // =============================================================
 // COLLATERAL HELPERS
@@ -24,17 +25,17 @@ double calculate_total_collateral(GameState *game, int player_id) {
     if (game->board[i].type == SQUARE_PROPERTY) {
       if (!game->board[i].data.property.is_mortgaged &&
           !game->board[i].data.property.is_loan_locked) {
-        total += game->board[i].data.property.mortgage_value;
+        total += get_dynamic_mortgage(game, i);
       }
     } else if (game->board[i].type == SQUARE_RAILWAY) {
       if (!game->board[i].data.railway.is_mortgaged &&
           !game->board[i].data.railway.is_loan_locked) {
-        total += game->board[i].data.railway.mortgage_value;
+        total += get_dynamic_mortgage(game, i);
       }
     } else if (game->board[i].type == SQUARE_UTILITY) {
       if (!game->board[i].data.utility.is_mortgaged &&
           !game->board[i].data.utility.is_loan_locked) {
-        total += game->board[i].data.utility.mortgage_value;
+        total += get_dynamic_mortgage(game, i);
       }
     }
   }
@@ -54,14 +55,7 @@ double calculate_max_loan(GameState *game, int player_id) {
 // Helper: gets the mortgage value of a square (property, railway, or utility)
 
 static double get_mortgage_value(GameState *game, int square_index) {
-  if (game->board[square_index].type == SQUARE_PROPERTY) {
-    return game->board[square_index].data.property.mortgage_value;
-  } else if (game->board[square_index].type == SQUARE_RAILWAY) {
-    return game->board[square_index].data.railway.mortgage_value;
-  } else if (game->board[square_index].type == SQUARE_UTILITY) {
-    return game->board[square_index].data.utility.mortgage_value;
-  }
-  return 0;
+  return get_dynamic_mortgage(game, square_index);
 }
 
 // Helper: checks if a square is eligible collateral (owned, unmortgaged, not already locked)

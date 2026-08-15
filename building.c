@@ -4,6 +4,8 @@
 int has_monopoly(GameState *game, int player_id, int square_index);
 int min_houses_in_group(GameState *game, int square_index);
 int find_player_index(GameState *game, int player_id);
+double get_dynamic_build_cost(GameState *game, int square_index, int is_hotel);
+double get_dynamic_price(GameState *game, int square_index);
 
 // =============================================
 // CORE BUILDING FUNCTIONS
@@ -42,7 +44,7 @@ int can_build_house(GameState *game, int square_index) {
   int player_index = find_player_index(game, owner_id);
   if (player_index == -1) return 0;
   if (game->players[player_index].money <
-      game->board[square_index].data.property.house_cost)
+      get_dynamic_build_cost(game, square_index, 0))
     return 0;
 
   return 1;
@@ -55,15 +57,15 @@ void build_house(GameState *game, int square_index) {
   int owner_id = game->board[square_index].owner_id;
   int player_index = find_player_index(game, owner_id);
 
-  game->players[player_index].money -=
-      game->board[square_index].data.property.house_cost;
+  double cost = get_dynamic_build_cost(game, square_index, 0);
+  game->players[player_index].money -= cost;
   game->board[square_index].data.property.num_houses++;
 
   printf("%s built house %d on %s for LKR %.0lf\n",
          game->players[player_index].name,
          game->board[square_index].data.property.num_houses,
          game->board[square_index].name,
-         game->board[square_index].data.property.house_cost);
+         cost);
 }
 
 // CAN BUILD HOTEL
@@ -88,7 +90,7 @@ int can_build_hotel(GameState *game, int square_index) {
   int player_index = find_player_index(game, owner_id);
   if (player_index == -1) return 0;
   if (game->players[player_index].money <
-      game->board[square_index].data.property.hotel_cost)
+      get_dynamic_build_cost(game, square_index, 1))
     return 0;
 
   return 1;
@@ -101,14 +103,14 @@ void build_hotel(GameState *game, int square_index) {
   int owner_id = game->board[square_index].owner_id;
   int player_index = find_player_index(game, owner_id);
 
-  game->players[player_index].money -=
-      game->board[square_index].data.property.hotel_cost;
+  double cost = get_dynamic_build_cost(game, square_index, 1);
+  game->players[player_index].money -= cost;
   game->board[square_index].data.property.num_houses = 0; // Hotel replaces 4 houses
   game->board[square_index].data.property.has_hotel = 1;
 
   printf("%s built a HOTEL on %s for LKR %.0lf\n",
          game->players[player_index].name, game->board[square_index].name,
-         game->board[square_index].data.property.hotel_cost);
+         cost);
 }
 
 // =============================================
@@ -194,7 +196,7 @@ void player_build_decision(GameState *game, int player_id) {
 
         // Build houses only if 50% of current cash remains after purchase
         if (can_build_house(game, i)) {
-          double cost = game->board[i].data.property.house_cost;
+          double cost = get_dynamic_build_cost(game, i, 0);
           if (cost <= game->players[player_index].money * 0.5) {
             build_house(game, i);
             built = 1;
@@ -203,7 +205,7 @@ void player_build_decision(GameState *game, int player_id) {
 
         // Hotels only allowed when zero mortgages AND no active loan AND 50% cash reserve
         if (!mortgages_exist && !has_loan && can_build_hotel(game, i)) {
-          double cost = game->board[i].data.property.hotel_cost;
+          double cost = get_dynamic_build_cost(game, i, 1);
           if (cost <= game->players[player_index].money * 0.5) {
             build_hotel(game, i);
             built = 1;
@@ -271,6 +273,24 @@ void player_build_decision(GameState *game, int player_id) {
     // TODO: When events system is implemented, add check:
     //   - Build aggressively if Housing Subsidy is active (30% cost reduction)
 
+    // Sell properties in a declining group
+    for (int i = 0; i < TOTAL_SQUARES; i++) {
+      if (game->board[i].owner_id == player_id && game->board[i].type == SQUARE_PROPERTY) {
+        if (game->board[i].data.property.group == game->market_decline_group) {
+          // Sell property back to the bank for half its base price
+          double sell_price = game->board[i].data.property.price * 0.5;
+          game->players[player_index].money += sell_price;
+          game->board[i].owner_id = -1;
+          game->board[i].data.property.owner_id = -1;
+          game->board[i].data.property.num_houses = 0;
+          game->board[i].data.property.has_hotel = 0;
+          
+          printf("[Opportunistic Trader] Sold %s back to the bank for LKR %.0lf to avoid Market Decline.\n", 
+                 game->board[i].name, sell_price);
+        }
+      }
+    }
+
     int built = 1;
     while (built) {
       built = 0;
@@ -280,7 +300,7 @@ void player_build_decision(GameState *game, int player_id) {
 
         // Build houses only if LKR 500 reserve maintained
         if (can_build_house(game, i)) {
-          double cost = game->board[i].data.property.house_cost;
+          double cost = get_dynamic_build_cost(game, i, 0);
           if (game->players[player_index].money - cost >= 500) {
             build_house(game, i);
             built = 1;
@@ -289,7 +309,7 @@ void player_build_decision(GameState *game, int player_id) {
 
         // Build hotels with same reserve check
         if (can_build_hotel(game, i)) {
-          double cost = game->board[i].data.property.hotel_cost;
+          double cost = get_dynamic_build_cost(game, i, 1);
           if (game->players[player_index].money - cost >= 500) {
             build_hotel(game, i);
             built = 1;

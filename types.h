@@ -124,6 +124,12 @@ typedef struct {
   double current_interest_rate;
   double railway_rent_base[4];
   double utility_rent_base[2];
+
+  // Dynamic Property Market
+  PropertyGroup market_boom_group;
+  PropertyGroup market_decline_group;
+  int market_rounds_left;
+  int group_cooldowns[9]; // Track 30-round cooldowns (index 1 to 8 map to groups)
 } GameState;
 
 #endif

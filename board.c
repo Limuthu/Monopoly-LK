@@ -605,4 +605,12 @@ void init_board(GameState *game) {
 
   game->utility_rent_base[0] = 4;
   game->utility_rent_base[1] = 10;
+
+  // Initialize Dynamic Property Market state
+  game->market_boom_group = GROUP_NONE;
+  game->market_decline_group = GROUP_NONE;
+  game->market_rounds_left = 0;
+  for (int i = 0; i < 9; i++) {
+    game->group_cooldowns[i] = 0;
+  }
 }

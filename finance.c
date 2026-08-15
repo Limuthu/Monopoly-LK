@@ -1,10 +1,13 @@
 #include "types.h"
 #include <stdio.h>
 
+double get_dynamic_price(GameState *game, int square_index);
+double get_dynamic_rent(GameState *game, int square_index);
+
 void purchase_property(GameState *game, int player_index, int square_index) {
   if (game->board[square_index].owner_id == -1) {
-    game->players[player_index].money -=
-        game->board[square_index].data.property.price;
+    double purchase_price = get_dynamic_price(game, square_index);
+    game->players[player_index].money -= purchase_price;
 
     game->board[square_index].owner_id = game->players[player_index].id;
     game->board[square_index].data.property.owner_id =
@@ -12,7 +15,7 @@ void purchase_property(GameState *game, int player_index, int square_index) {
 
     printf("%s purchased %s for LKR %.0lf\n", game->players[player_index].name,
            game->board[square_index].name,
-           game->board[square_index].data.property.price);
+           purchase_price);
   }
 }
 
@@ -60,7 +63,7 @@ void pay_property_rent(GameState *game, int player_index, int square_index) {
   int owner_id = game->board[square_index].owner_id;
   int owner_index = find_player_index(game, owner_id);
 
-  double base_rent = game->board[square_index].data.property.base_rent;
+  double base_rent = get_dynamic_rent(game, square_index);
   int num_houses = game->board[square_index].data.property.num_houses;
   int hotel = game->board[square_index].data.property.has_hotel;
 

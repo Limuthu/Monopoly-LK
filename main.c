@@ -20,6 +20,8 @@ void apply_property_depreciation(GameState *game);
 void apply_building_depreciation(GameState *game);
 void player_maintenance_decision(GameState *game, int player_id);
 void handle_inflation(GameState *game);
+void update_property_market(GameState *game);
+const char* get_group_name(PropertyGroup group);
 
 void handle_jail_turn(GameState *game, int player_index, int *dice_roll_out, int *moved_this_turn) {
   Player *p = &game->players[player_index];
@@ -150,6 +152,26 @@ int main(void) {
     // Step 7: Inflation Cycle (every 10 rounds)
     if ((j + 1) % 10 == 0) {
       handle_inflation(&game);
+    }
+
+    // Step 8: Dynamic Property Market Cycle (every 10 rounds)
+    if ((j + 1) % 10 == 0) {
+      update_property_market(&game);
+    }
+
+    // Step 9: Print active market conditions (Rule 36)
+    if (game.market_rounds_left > 0) {
+      game.market_rounds_left--;
+      printf("\n[MARKET STATUS] Boom: %s Group | Decline: %s Group | Rounds Left: %d\n",
+             get_group_name(game.market_boom_group),
+             get_group_name(game.market_decline_group),
+             game.market_rounds_left);
+      
+      if (game.market_rounds_left == 0) {
+        game.market_boom_group = GROUP_NONE;
+        game.market_decline_group = GROUP_NONE;
+        printf("[MARKET UPDATE] The market has stabilized. Conditions return to normal.\n\n");
+      }
     }
 
     game.current_turn = game.current_turn + 1;

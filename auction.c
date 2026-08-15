@@ -6,6 +6,7 @@ int find_player_index(GameState *game, int player_id);
 void purchase_property(GameState *game, int player_index, int square_index);
 void purchase_railway(GameState *game, int player_index, int square_index);
 void purchase_utility(GameState *game, int player_index, int square_index);
+double get_dynamic_auction_start(GameState *game, int square_index);
 
 // =============================================================
 // HELPER: GET MARKET VALUE
@@ -120,8 +121,8 @@ void run_auction(GameState *game, int square_index, int triggering_player_id) {
   double market_value = get_market_value(game, square_index);
   if (market_value <= 0) return;
 
-  // Starting bid = 50% of market value (Rule-LK 19)
-  double current_bid = market_value * 0.50;
+  // Starting bid (adjusted by Dynamic Property Market)
+  double current_bid = get_dynamic_auction_start(game, square_index);
 
   printf("\n========== AUCTION: %s ==========\n", game->board[square_index].name);
   printf("Market Value: LKR %.0lf | Starting Bid: LKR %.0lf\n",
