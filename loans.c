@@ -8,6 +8,17 @@ int find_player_index(GameState *game, int player_id);
 int has_monopoly(GameState *game, int player_id, int square_index);
 double get_dynamic_mortgage(GameState *game, int square_index);
 
+double get_dynamic_interest_rate(GameState *game) {
+  double rate = game->current_interest_rate;
+  if (game->active_economic_event == EVENT_ECONOMIC_RECESSION) {
+    rate += 0.15; // Absolute +15%
+  } else if (game->active_economic_event == EVENT_STOCK_MARKET_BOOM) {
+    rate -= 0.10; // Absolute -10%
+    if (rate < 0.0) rate = 0.0;
+  }
+  return rate;
+}
+
 // =============================================================
 // COLLATERAL HELPERS
 // =============================================================
@@ -169,7 +180,7 @@ void obtain_loan(GameState *game, int player_id, double amount) {
   game->players[idx].loan_amount = amount;
   game->players[idx].loan_rounds_left = LOAN_DURATION;
   game->players[idx].loan_start_round = game->current_turn;
-  game->players[idx].loan_interest_rate = game->current_interest_rate;
+  game->players[idx].loan_interest_rate = get_dynamic_interest_rate(game);
 
   // Output matching PDF format
   printf("%s obtained a secured loan.\n", game->players[idx].name);

@@ -91,7 +91,23 @@ void trigger_disaster(GameState *game) {
 
   // Pick random property and disaster
   int target_index = developed_squares[rand() % count];
-  DisasterType type = (DisasterType)(rand() % 5);
+  
+  // Disaster generation logic
+  DisasterType type;
+  int r = rand() % 100;
+  
+  if (game->active_economic_event == EVENT_HEAVY_MONSOON) {
+    // Flood becomes 50% chance
+    if (r < 50) type = DISASTER_FLOOD;
+    else type = (DisasterType)(rand() % 5); 
+  } else if (game->active_economic_event == EVENT_POLITICAL_UNREST) {
+    // Riot probability doubles (usually 20%, so make it 40%)
+    if (r < 40) type = DISASTER_RIOT;
+    else type = (DisasterType)(rand() % 5);
+  } else {
+    // Normal 20% each
+    type = (DisasterType)(rand() % 5);
+  }
   
   PropertyData *prop = &game->board[target_index].data.property;
   int owner_idx = -1;
@@ -128,9 +144,13 @@ void trigger_disaster(GameState *game) {
       is_covered = 1;
       compensation = repair_cost * 1.00; // 100% payout
     } else if (prop->insurance_tier == 3) {
-      // Bus Interruption covers all + 5 rounds rent
+      // Bus Interruption covers all + rent
       is_covered = 1;
-      compensation = repair_cost * 1.00 + (get_dynamic_rent(game, target_index) * 5);
+      int rent_rounds = 5;
+      if (game->active_economic_event == EVENT_POLITICAL_UNREST) {
+        rent_rounds = 10; // Claims increase
+      }
+      compensation = repair_cost * 1.00 + (get_dynamic_rent(game, target_index) * rent_rounds);
     }
   }
 
@@ -212,6 +232,10 @@ static void buy_insurance(GameState *game, int player_index, int square_index, i
   if (tier == 1) premium = value * 0.05;
   else if (tier == 2) premium = value * 0.10;
   else if (tier == 3) premium = value * 0.15;
+  
+  if (game->active_economic_event == EVENT_HEAVY_MONSOON) {
+    premium *= 1.50; // Global Insurance Premiums +50%
+  }
 
   if (game->players[player_index].money >= premium) {
     game->players[player_index].money -= premium;

@@ -194,6 +194,11 @@ int should_buy(GameState *game, int player_id, int square_index) {
 
     // Conservative Banker
   } else if (player_id == 2) {
+    if (game->active_economic_event == EVENT_ECONOMIC_RECESSION) {
+      printf("[Conservative Banker] Refusing to buy %s due to Economic Recession!\n", game->board[square_index].name);
+      run_auction(game, square_index, player_id);
+      return 0;
+    }
 
     // Purchases properties only if at least 50% of current cash remains after purchase
 
@@ -309,6 +314,11 @@ int should_buy_railway(GameState *game, int player_id, int square_index) {
 
   // Conservative Banker — buys only if at least 50% cash remains
   } else if (player_id == 2) {
+    if (game->active_economic_event == EVENT_ECONOMIC_RECESSION) {
+      printf("[Conservative Banker] Refusing to buy railway %s due to Economic Recession!\n", game->board[square_index].name);
+      run_auction(game, square_index, player_id);
+      return 0;
+    }
     if (price <= game->players[player_index].money * 0.5) {
       purchase_railway(game, player_index, square_index);
     } else {
@@ -360,6 +370,11 @@ int should_buy_utility(GameState *game, int player_id, int square_index) {
 
   // Conservative Banker — buys only if at least 50% cash remains
   } else if (player_id == 2) {
+    if (game->active_economic_event == EVENT_ECONOMIC_RECESSION) {
+      printf("[Conservative Banker] Refusing to buy utility %s due to Economic Recession!\n", game->board[square_index].name);
+      run_auction(game, square_index, player_id);
+      return 0;
+    }
     if (price <= game->players[player_index].money * 0.5) {
       purchase_utility(game, player_index, square_index);
     } else {

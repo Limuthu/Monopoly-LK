@@ -17,6 +17,16 @@ const char* get_group_name(PropertyGroup group) {
   }
 }
 
+// Helpers for Economic Events
+int is_coastal(PropertyGroup group) {
+  return (group == GROUP_YELLOW || group == GROUP_LIGHT_BLUE || group == GROUP_ORANGE);
+}
+
+int is_commercial(int square_index) {
+  // Pettah (1) and Maradana (3)
+  return (square_index == 1 || square_index == 3);
+}
+
 // Update the property market every 10 rounds
 void update_property_market(GameState *game) {
   // 1. Decrement cooldowns
@@ -78,8 +88,22 @@ double get_dynamic_price(GameState *game, int square_index) {
   PropertyGroup group = game->board[square_index].data.property.group;
 
   if (group == game->market_boom_group) {
-    return base * 1.15; // Boom: +15% Purchase Price
+    base *= 1.15; // Boom: +15% Purchase Price
   }
+  
+  // Apply Economic Event Modifiers
+  if (game->active_economic_event == EVENT_TOURISM_BOOM && group == GROUP_YELLOW) {
+    base *= 1.15;
+  } else if (game->active_economic_event == EVENT_HEAVY_MONSOON && is_coastal(group)) {
+    base *= 0.90;
+  } else if (game->active_economic_event == EVENT_ECONOMIC_RECESSION) {
+    base *= 0.85;
+  } else if (game->active_economic_event == EVENT_STOCK_MARKET_BOOM) {
+    base *= 1.10;
+  } else if (game->active_economic_event == EVENT_FOREIGN_INVESTMENT && is_commercial(square_index)) {
+    base *= 1.20;
+  }
+  
   return base;
 }
 
@@ -104,10 +128,24 @@ double get_dynamic_rent(GameState *game, int square_index) {
   PropertyGroup group = game->board[square_index].data.property.group;
 
   if (group == game->market_boom_group) {
-    return base * 1.25; // Boom: +25% Rental Income
+    base *= 1.25; // Boom: +25% Rental Income
   } else if (group == game->market_decline_group) {
-    return base * 0.80; // Decline: -20% Rental Income
+    base *= 0.80; // Decline: -20% Rental Income
   }
+  
+  // Apply Economic Event Modifiers
+  if (game->active_economic_event == EVENT_ECONOMIC_RECESSION) {
+    base *= 0.90;
+  } else if (game->active_economic_event == EVENT_TOURISM_BOOM) {
+    if (game->board[square_index].data.property.has_hotel) {
+      base *= 2.0; // Hotel rent doubles
+    }
+  } else if (game->active_economic_event == EVENT_POLITICAL_UNREST) {
+    if (game->board[square_index].data.property.has_hotel) {
+      base *= 0.5; // Hotel rent drops 50%
+    }
+  }
+  
   return base;
 }
 
@@ -147,8 +185,16 @@ double get_dynamic_build_cost(GameState *game, int square_index, int is_hotel) {
   PropertyGroup group = game->board[square_index].data.property.group;
 
   if (group == game->market_boom_group) {
-    return base * 1.10; // Boom: +10% Construction Cost
+    base *= 1.10; // Boom: +10% Construction Cost
   }
+  
+  // Apply Economic Event Modifiers
+  if (game->active_economic_event == EVENT_FUEL_CRISIS) {
+    base *= 1.20; // +20% development cost
+  } else if (game->active_economic_event == EVENT_GOV_HOUSING && !is_hotel) {
+    base *= 0.75; // -25% house cost
+  }
+  
   return base;
 }
 

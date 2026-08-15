@@ -183,6 +183,10 @@ void player_build_decision(GameState *game, int player_id) {
   // ---------------------------------------------------------
 
   else if (player_id == 2) {
+    if (game->active_economic_event == EVENT_ECONOMIC_RECESSION) {
+      printf("[Conservative Banker] Refusing to build during Economic Recession!\n");
+      return;
+    }
 
     int mortgages_exist = has_any_mortgage(game, player_id);
     int has_loan = game->players[player_index].has_loan;
@@ -270,13 +274,15 @@ void player_build_decision(GameState *game, int player_id) {
       return;
     }
 
-    // TODO: When events system is implemented, add check:
-    //   - Build aggressively if Housing Subsidy is active (30% cost reduction)
+    // Housing Subsidy check is implemented natively below with get_dynamic_build_cost
 
-    // Sell properties in a declining group
+    // Sell properties in a declining group or coastal properties during Heavy Monsoon
     for (int i = 0; i < TOTAL_SQUARES; i++) {
       if (game->board[i].owner_id == player_id && game->board[i].type == SQUARE_PROPERTY) {
-        if (game->board[i].data.property.group == game->market_decline_group) {
+        PropertyGroup grp = game->board[i].data.property.group;
+        int is_coastal = (grp == GROUP_YELLOW || grp == GROUP_LIGHT_BLUE || grp == GROUP_ORANGE);
+        
+        if (grp == game->market_decline_group || (game->active_economic_event == EVENT_HEAVY_MONSOON && is_coastal)) {
           // Sell property back to the bank for half its base price
           double sell_price = game->board[i].data.property.price * 0.5;
           game->players[player_index].money += sell_price;
@@ -285,8 +291,13 @@ void player_build_decision(GameState *game, int player_id) {
           game->board[i].data.property.num_houses = 0;
           game->board[i].data.property.has_hotel = 0;
           
-          printf("[Opportunistic Trader] Sold %s back to the bank for LKR %.0lf to avoid Market Decline.\n", 
-                 game->board[i].name, sell_price);
+          if (game->active_economic_event == EVENT_HEAVY_MONSOON && is_coastal) {
+            printf("[Opportunistic Trader] Sold %s back to the bank for LKR %.0lf to avoid Heavy Monsoon damage.\n", 
+                   game->board[i].name, sell_price);
+          } else {
+            printf("[Opportunistic Trader] Sold %s back to the bank for LKR %.0lf to avoid Market Decline.\n", 
+                   game->board[i].name, sell_price);
+          }
         }
       }
     }
@@ -298,10 +309,12 @@ void player_build_decision(GameState *game, int player_id) {
       for (int i = 0; i < TOTAL_SQUARES; i++) {
         if (game->board[i].owner_id != player_id) continue;
 
-        // Build houses only if LKR 500 reserve maintained
+        // Build houses only if LKR 500 reserve maintained, UNLESS GOV_HOUSING is active
         if (can_build_house(game, i)) {
           double cost = get_dynamic_build_cost(game, i, 0);
-          if (game->players[player_index].money - cost >= 500) {
+          int reserve_needed = (game->active_economic_event == EVENT_GOV_HOUSING) ? 0 : 500;
+          
+          if (game->players[player_index].money - cost >= reserve_needed) {
             build_house(game, i);
             built = 1;
           }

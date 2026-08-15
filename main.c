@@ -26,6 +26,9 @@ void trigger_disaster(GameState *game);
 void update_insurance_durations(GameState *game);
 void attempt_disaster_repairs(GameState *game, int player_id);
 
+void trigger_economic_event(GameState *game);
+const char* get_economic_event_name(EconomicEventType type);
+
 void handle_jail_turn(GameState *game, int player_index, int *dice_roll_out, int *moved_this_turn) {
   Player *p = &game->players[player_index];
   p->jail_turns++;
@@ -186,6 +189,24 @@ int main(void) {
         game.market_boom_group = GROUP_NONE;
         game.market_decline_group = GROUP_NONE;
         printf("[MARKET UPDATE] The market has stabilized. Conditions return to normal.\n\n");
+      }
+    }
+    
+    // Step 12: Economic Events (every 15 rounds)
+    if ((j + 1) % 15 == 0) {
+      trigger_economic_event(&game);
+    }
+    
+    // Step 13: Update Economic Event Status
+    if (game.economic_event_rounds_left > 0) {
+      game.economic_event_rounds_left--;
+      printf("[ECONOMIC STATUS] Active Event: %s | Rounds Left: %d\n",
+             get_economic_event_name(game.active_economic_event),
+             game.economic_event_rounds_left);
+             
+      if (game.economic_event_rounds_left == 0) {
+        game.active_economic_event = EVENT_NONE;
+        printf("[ECONOMIC UPDATE] The national economic event has concluded.\n\n");
       }
     }
 

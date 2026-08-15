@@ -28,6 +28,19 @@ typedef enum {
   DISASTER_ELECTRICAL_FAILURE // Handled identically to Vandalism
 } DisasterType;
 
+// Economic Event types
+typedef enum {
+  EVENT_NONE,
+  EVENT_TOURISM_BOOM,
+  EVENT_FUEL_CRISIS,
+  EVENT_HEAVY_MONSOON,
+  EVENT_ECONOMIC_RECESSION,
+  EVENT_STOCK_MARKET_BOOM,
+  EVENT_GOV_HOUSING,
+  EVENT_FOREIGN_INVESTMENT,
+  EVENT_POLITICAL_UNREST
+} EconomicEventType;
+
 // Group types for properties
 
 typedef enum {
@@ -143,6 +156,10 @@ typedef struct {
   PropertyGroup market_decline_group;
   int market_rounds_left;
   int group_cooldowns[9]; // Track 30-round cooldowns (index 1 to 8 map to groups)
+
+  // Economic Events
+  EconomicEventType active_economic_event;
+  int economic_event_rounds_left;
 } GameState;
 
 #endif

@@ -136,6 +136,10 @@ void pay_railway_rent(GameState *game, int player_index, int square_index) {
   if (owned > 0 && owned <= 4) {
     rent = game->railway_rent_base[owned - 1];
   }
+  
+  if (game->active_economic_event == EVENT_FUEL_CRISIS) {
+    rent *= 2.0; // Railway rent doubles
+  }
 
   game->players[player_index].money -= rent;
   game->players[owner_index].money += rent;
