@@ -137,6 +137,11 @@ int roll_dice() {
   return dice1 + dice2;
 }
 
+void roll_two_dice(int *d1, int *d2) {
+  *d1 = ((rand() % 6) + 1);
+  *d2 = ((rand() % 6) + 1);
+}
+
 void move_player(GameState *game, int player_index, int dice_roll) {
   int current_position = game->players[player_index].position;
   int new_position = (current_position + dice_roll) % TOTAL_SQUARES;
@@ -144,7 +149,7 @@ void move_player(GameState *game, int player_index, int dice_roll) {
   printf("%s moves from %s to %s (position %d)\n",
          game->players[player_index].name, game->board[current_position].name,
          game->board[new_position].name, game->players[player_index].position);
-  if (current_position > new_position) {
+  if (current_position > new_position && !game->players[player_index].in_jail) {
     game->players[player_index].money += 2000;
     printf("%s passed Go and collected LKR 2000\n", game->players[player_index].name);
   }

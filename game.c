@@ -70,7 +70,17 @@ void handle_landing(GameState *game, int player_position, int player_id, int dic
     printf("Landed on Jail\n");
     break;
   case SQUARE_SPECIAL:
-    printf("Landed on Special\n");
+    if (player_position == 30) {
+      printf("Landed on Go To Jail!\n");
+      printf("%s is sent directly to Jail without collecting Go money.\n", game->players[visitor_index].name);
+      game->players[visitor_index].in_jail = 1;
+      game->players[visitor_index].jail_turns = 0;
+      game->players[visitor_index].position = 10;
+    } else if (player_position == 10) {
+      printf("Landed on Jail (Just Visiting)\n");
+    } else {
+      printf("Landed on %s\n", game->board[player_position].name);
+    }
     break;
   case SQUARE_BANK:
     printf("Landed on Bank of Ceylon\n");
