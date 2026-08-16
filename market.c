@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Helper to get group name as string
+// get group name as string
 const char* get_group_name(PropertyGroup group) {
   switch (group) {
     case GROUP_BROWN: return "Brown";
@@ -17,7 +17,7 @@ const char* get_group_name(PropertyGroup group) {
   }
 }
 
-// Helpers for Economic Events
+// Economic Events
 int is_coastal(PropertyGroup group) {
   return (group == GROUP_YELLOW || group == GROUP_LIGHT_BLUE || group == GROUP_ORANGE);
 }
@@ -45,9 +45,8 @@ void update_property_market(GameState *game) {
     }
   }
 
-  // Ensure we have at least 2 eligible groups to pick from
   if (eligible_count < 2) {
-    printf("[MARKET UPDATE] Not enough eligible groups for market shift.\n");
+    printf("MARKET UPDATE Not enough eligible groups for market shift.\n");
     return;
   }
 
@@ -69,17 +68,15 @@ void update_property_market(GameState *game) {
 
   // 5. Print announcement
   printf("\n======================================================\n");
-  printf("[MARKET UPDATE] A major shift in the Property Market!\n");
+  printf("MARKET UPDATE A major shift in the Property Market!\n");
   printf("MARKET BOOM: %s Group\n", get_group_name(game->market_boom_group));
-  printf("  -> Prices +15%%, Rent +25%%, Mortgage +15%%, Build Cost +10%%\n");
+  printf("Prices +15%%, Rent +25%%, Mortgage +15%%, Build Cost +10%%\n");
   printf("MARKET DECLINE: %s Group\n", get_group_name(game->market_decline_group));
-  printf("  -> Values -15%%, Rent -20%%, Mortgage -10%%, Auction -25%%\n");
+  printf("Values -15%%, Rent -20%%, Mortgage -10%%, Auction -25%%\n");
   printf("======================================================\n\n");
 }
 
-// ----------------------------------------------------------------------------
-// GETTER FUNCTIONS (Dynamically apply market buffs/debuffs)
-// ----------------------------------------------------------------------------
+// Dynamic values getting FUNCTIONS
 
 double get_dynamic_price(GameState *game, int square_index) {
   if (game->board[square_index].type != SQUARE_PROPERTY) return 0;
@@ -146,10 +143,26 @@ double get_dynamic_property_value(GameState *game, int square_index) {
   PropertyGroup group = game->board[square_index].data.property.group;
 
   if (group == game->market_boom_group) {
-    return base * 1.20; // Boom: +20% Property Value (for net worth/insurance)
+    base *= 1.20; // Boom: +20% Property Value (for net worth/insurance)
   } else if (group == game->market_decline_group) {
-    return base * 0.85; // Decline: -15% Property Value
+    base *= 0.85; // Decline: -15% Property Value
   }
+  
+  // Apply National Event Cards
+  int owner_id = game->board[square_index].data.property.owner_id;
+  if (owner_id != -1) {
+    for (int i = 0; i < game->num_players; i++) {
+      if (game->players[i].id == owner_id) {
+        NationalEventCardType card = game->players[i].active_national_card;
+        if (card == NATIONAL_CARD_STOCK_MARKET_RISE) base *= 1.10;
+        if (card == NATIONAL_CARD_ECONOMIC_DOWNTURN) base *= 0.85;
+        if (card == NATIONAL_CARD_FOREIGN_FUNDING && is_commercial(square_index)) base *= 1.15;
+        if (card == NATIONAL_CARD_PROPERTY_REVALUATION && group == game->players[i].revalued_group) base *= 1.15;
+        break;
+      }
+    }
+  }
+  
   return base;
 }
 
@@ -187,6 +200,10 @@ double get_dynamic_rent(GameState *game, int square_index) {
         NationalEventCardType card = game->players[i].active_national_card;
         if (card == NATIONAL_CARD_TOURISM_HYPE && game->board[square_index].data.property.has_hotel) base *= 2.0;
         if (card == NATIONAL_CARD_FESTIVAL_SEASON && game->board[square_index].data.property.has_hotel) base *= 1.5;
+        if (card == NATIONAL_CARD_STOCK_MARKET_RISE) base *= 1.10;
+        if (card == NATIONAL_CARD_ECONOMIC_DOWNTURN) base *= 0.85;
+        if (card == NATIONAL_CARD_FOREIGN_FUNDING && is_commercial(square_index)) base *= 1.15;
+        if (card == NATIONAL_CARD_PROPERTY_REVALUATION && group == game->players[i].revalued_group) base *= 1.15;
         break;
       }
     }
@@ -220,10 +237,26 @@ double get_dynamic_mortgage(GameState *game, int square_index) {
   PropertyGroup group = game->board[square_index].data.property.group;
 
   if (group == game->market_boom_group) {
-    return base * 1.15; // Boom: +15% Mortgage Value
+    base *= 1.15; // Boom: +15% Mortgage Value
   } else if (group == game->market_decline_group) {
-    return base * 0.90; // Decline: -10% Mortgage Value
+    base *= 0.90; // Decline: -10% Mortgage Value
   }
+  
+  // Apply National Event Cards
+  int owner_id = game->board[square_index].data.property.owner_id;
+  if (owner_id != -1) {
+    for (int i = 0; i < game->num_players; i++) {
+      if (game->players[i].id == owner_id) {
+        NationalEventCardType card = game->players[i].active_national_card;
+        if (card == NATIONAL_CARD_STOCK_MARKET_RISE) base *= 1.10;
+        if (card == NATIONAL_CARD_ECONOMIC_DOWNTURN) base *= 0.85;
+        if (card == NATIONAL_CARD_FOREIGN_FUNDING && is_commercial(square_index)) base *= 1.15;
+        if (card == NATIONAL_CARD_PROPERTY_REVALUATION && group == game->players[i].revalued_group) base *= 1.15;
+        break;
+      }
+    }
+  }
+  
   return base;
 }
 

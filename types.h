@@ -24,8 +24,8 @@ typedef enum {
   DISASTER_FIRE,
   DISASTER_FLOOD,
   DISASTER_RIOT,
-  DISASTER_BUILDING_COLLAPSE, // Handled identically to Earthquake
-  DISASTER_ELECTRICAL_FAILURE // Handled identically to Vandalism
+  DISASTER_BUILDING_COLLAPSE, 
+  DISASTER_ELECTRICAL_FAILURE 
 } DisasterType;
 
 // Economic Event types
@@ -124,23 +124,23 @@ typedef struct {
 
   int is_mortgaged;
   int is_insured;
-  int insurance_tier;          // 0 = None, 1 = Basic, 2 = Comprehensive, 3 = Bus. Interruption
+  int insurance_tier;          
   int insurance_rounds_left;   // Starts at 20 when purchased
-  int is_damaged;              // Flag: 1 if disaster struck and hasn't been repaired
-  double pending_repair_cost;  // Stores the cost needed to fix the disaster
-  double pending_insurance_payout; // The claim payout waiting to be received upon repair
+  int is_damaged;              
+  double pending_repair_cost;  
+  double pending_insurance_payout; 
   int is_loan_locked;
   PropertyGroup group;
 
-  // Property Depreciation (Rule-LK 15, 16, 17)
+  // Property Depreciation 
   int    prop_age;               // Rounds since last renovation
-  double depreciation_pct;       // Total % lost so far (max 30.0)
-  double base_rent_original;     // Snapshot of rent at init, used to restore after renovation
+  double depreciation_pct;      
+  double base_rent_original;     
 
-  // Building Depreciation (Rule-LK 25, 26, 27, 28, 29)
-  double building_condition;     // 0.0 to 100.0. Starts at 100. Drops 2/round.
-  int    rounds_without_maint;   // Counter. > 20 triggers structural damage.
-  int    has_structural_damage;  // Flag: 1 after neglect damage fires.
+  // Building Depreciation 
+  double building_condition;     // Drops 2 perround.
+  int    rounds_without_maint;   // > 20 make structural damage.
+  int    has_structural_damage;  
   int    closed_rounds_left;     // National Event: Political Rally
   int    forced_development_rounds_left; // Anti-Speculation Act deadline
 } PropertyData;
@@ -149,7 +149,7 @@ typedef struct {
 
 typedef struct {
   double price;
-  double mortgage_value;   // needed for collateral calculation
+  double mortgage_value;   
   int owner_id;
   int is_mortgaged;
   int is_loan_locked;
@@ -160,7 +160,7 @@ typedef struct {
 
 typedef struct {
   double price;
-  double mortgage_value;   // needed for collateral calculation
+  double mortgage_value;   
   int owner_id;
   int is_mortgaged;
   int is_loan_locked;
@@ -196,6 +196,7 @@ typedef struct {
   int loan_start_round;
   double loan_interest_rate;
   int is_bankrupt;
+  int passed_go_this_round;
   double insurance_claims_receivable;
   double taxes_due;
 
@@ -213,7 +214,7 @@ typedef struct {
   int current_turn;
   double bank_money;
 
-  // Global Economy / Inflation
+  // Inflation
   double current_inflation_rate;
   double current_interest_rate;
   double railway_rent_base[4];
@@ -223,7 +224,7 @@ typedef struct {
   PropertyGroup market_boom_group;
   PropertyGroup market_decline_group;
   int market_rounds_left;
-  int group_cooldowns[9]; // Track 30-round cooldowns (index 1 to 8 map to groups)
+  int group_cooldowns[9]; 
 
   // Economic Events
   EconomicEventType active_economic_event;

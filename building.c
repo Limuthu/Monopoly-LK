@@ -7,12 +7,6 @@ int find_player_index(GameState *game, int player_id);
 double get_dynamic_build_cost(GameState *game, int square_index, int is_hotel);
 double get_dynamic_price(GameState *game, int square_index);
 
-// =============================================
-// CORE BUILDING FUNCTIONS
-// =============================================
-
-// CAN BUILD HOUSE
-// Checks all prerequisites: monopoly, even-building, limits, affordability
 
 int can_build_house(GameState *game, int square_index) {
 
@@ -50,9 +44,6 @@ int can_build_house(GameState *game, int square_index) {
   return 1;
 }
 
-// BUILD HOUSE
-// Deducts house_cost from owner and increments num_houses
-
 void build_house(GameState *game, int square_index) {
   int owner_id = game->board[square_index].owner_id;
   int player_index = find_player_index(game, owner_id);
@@ -67,9 +58,6 @@ void build_house(GameState *game, int square_index) {
          game->board[square_index].name,
          cost);
 }
-
-// CAN BUILD HOTEL
-// Property must have exactly 4 houses, owner must afford hotel_cost
 
 int can_build_hotel(GameState *game, int square_index) {
 
@@ -96,9 +84,6 @@ int can_build_hotel(GameState *game, int square_index) {
   return 1;
 }
 
-// BUILD HOTEL
-// Deducts hotel_cost, sets has_hotel = 1, resets num_houses = 0
-
 void build_hotel(GameState *game, int square_index) {
   int owner_id = game->board[square_index].owner_id;
   int player_index = find_player_index(game, owner_id);
@@ -112,12 +97,6 @@ void build_hotel(GameState *game, int square_index) {
          game->players[player_index].name, game->board[square_index].name,
          cost);
 }
-
-// =============================================
-// HELPER: CHECK FOR OUTSTANDING MORTGAGES
-// =============================================
-// Used by Conservative Banker — returns 1 if ANY owned property/railway/utility
-// is mortgaged
 
 int has_any_mortgage(GameState *game, int player_id) {
   for (int i = 0; i < TOTAL_SQUARES; i++) {
@@ -136,20 +115,16 @@ int has_any_mortgage(GameState *game, int player_id) {
   return 0;
 }
 
-// =============================================
-// PLAYER BUILDING STRATEGIES
-// =============================================
-
 void player_build_decision(GameState *game, int player_id) {
   int player_index = find_player_index(game, player_id);
   if (player_index == -1) return;
 
   if (game->players[player_index].construction_suspended) {
-    printf("[%s] Cannot construct due to Labour Strike!\n", game->players[player_index].name);
+    printf("%s Cannot construct due to Labour Strike!\n", game->players[player_index].name);
     return;
   }
 
-  // Handle Anti-Speculation Act forced development first for ALL players
+  // Handle Anti-Speculation Act 
   for (int i = 0; i < TOTAL_SQUARES; i++) {
     if (game->board[i].type == SQUARE_PROPERTY && 
         game->board[i].owner_id == player_id &&
@@ -157,7 +132,7 @@ void player_build_decision(GameState *game, int player_id) {
       if (can_build_house(game, i)) {
         double cost = get_dynamic_build_cost(game, i, 0);
         if (game->players[player_index].money >= cost) {
-          printf("[%s] Forced to build on %s to comply with Anti-Speculation Act!\n", 
+          printf("%s Forced to build on %s to comply with Anti-Speculation Act!\n", 
                  game->players[player_index].name, game->board[i].name);
           build_house(game, i);
         }
@@ -165,11 +140,9 @@ void player_build_decision(GameState *game, int player_id) {
     }
   }
 
-  // ---------------------------------------------------------
-  // Player 1 — Aggressive Investor
+  // Player 1 - Aggressive Investor
   // Builds max houses immediately after monopoly.
   // Upgrades to hotels as soon as legally possible.
-  // ---------------------------------------------------------
 
   if (player_id == 1) {
 
@@ -197,15 +170,13 @@ void player_build_decision(GameState *game, int player_id) {
     }
   }
 
-  // ---------------------------------------------------------
-  // Player 2 — Conservative Banker
-  // NEVER builds hotels until all outstanding mortgages are paid.
+  // Player 2 - Conservative Banker
+  // never builds hotels until all outstanding mortgages are paid.
   // Maintains 50% cash reserve (consistent with buying behaviour).
-  // ---------------------------------------------------------
 
   else if (player_id == 2) {
     if (game->active_economic_event == EVENT_ECONOMIC_RECESSION) {
-      printf("[Conservative Banker] Refusing to build during Economic Recession!\n");
+      printf("Conservative Banker Refusing to build during Economic Recession!\n");
       return;
     }
 
@@ -240,13 +211,11 @@ void player_build_decision(GameState *game, int player_id) {
     }
   }
 
-  // ---------------------------------------------------------
-  // Player 3 — Risk Taker
+  // Player 3 - Risk Taker
   // Hotels as early as possible.
   // Prioritises expensive property groups over balanced portfolios.
-  // No cash reserve — will build even if it drains almost all money.
+  // No cash reserve - will build even if it drains almost all money.
   // Sells lower-value properties to finance premium developments.
-  // ---------------------------------------------------------
 
   else if (player_id == 3) {
     void sell_asset_to_bank(GameState *game, int player_id, int square_index);
@@ -338,22 +307,18 @@ void player_build_decision(GameState *game, int player_id) {
     }
   }
 
-  // ---------------------------------------------------------
-  // Player 4 — Opportunistic Trader
+  // Player 4 - Opportunistic Trader
   // Delays construction during inflation.
   // Accelerates construction if Housing Subsidy is active.
-  // Maintains LKR 500 cash reserve (consistent with buying behaviour).
-  // ---------------------------------------------------------
+  // Maintains LKR 500 cash reserve 
 
   else if (player_id == 4) {
 
     if (game->current_inflation_rate > 0.0) {
-      printf("[Opportunistic Trader] Delaying construction due to inflation (%.0lf%%)\n", 
+      printf("Opportunistic Trader Delaying construction due to inflation (%.0lf%%)\n", 
              game->current_inflation_rate * 100);
       return;
     }
-
-    // Housing Subsidy check is implemented natively below with get_dynamic_build_cost
 
     // Sell properties in a declining group, coastal properties during Heavy Monsoon, or properties hit by regional debuffs
     for (int i = 0; i < TOTAL_SQUARES; i++) {
@@ -379,13 +344,13 @@ void player_build_decision(GameState *game, int player_id) {
           game->board[i].data.property.has_hotel = 0;
           
           if (has_regional_decline) {
-            printf("[Opportunistic Trader] Sold %s back to the bank for LKR %.0lf to avoid Regional Development debuff.\n", 
+            printf("Opportunistic Trader Sold %s back to the bank for LKR %.0lf to avoid Regional Development debuff.\n", 
                    game->board[i].name, sell_price);
           } else if (has_monsoon_decline) {
-            printf("[Opportunistic Trader] Sold %s back to the bank for LKR %.0lf to avoid Heavy Monsoon damage.\n", 
+            printf("Opportunistic Trader Sold %s back to the bank for LKR %.0lf to avoid Heavy Monsoon damage.\n", 
                    game->board[i].name, sell_price);
           } else {
-            printf("[Opportunistic Trader] Sold %s back to the bank for LKR %.0lf to avoid Market Decline.\n", 
+            printf("Opportunistic Trader Sold %s back to the bank for LKR %.0lf to avoid Market Decline.\n", 
                    game->board[i].name, sell_price);
           }
         }
@@ -423,66 +388,5 @@ void player_build_decision(GameState *game, int player_id) {
   }
 }
 
-// External declarations for depreciation functions
-void renovate_property(GameState *game, int square_index, int player_index);
-void do_building_maintenance(GameState *game, int square_index, int player_index);
-void renovate_building(GameState *game, int square_index, int player_index);
 
-void player_maintenance_decision(GameState *game, int player_id) {
-  int player_index = find_player_index(game, player_id);
-  if (player_index == -1) return;
-
-  for (int i = 0; i < TOTAL_SQUARES; i++) {
-    if (game->board[i].type != SQUARE_PROPERTY) continue;
-    if (game->board[i].owner_id != player_id) continue;
-
-    PropertyData *prop = &game->board[i].data.property;
-
-    // 1. Structural Damage Renovation (Priority 1)
-    if (prop->has_structural_damage) {
-      if (player_id == 1 || player_id == 2) {
-        // Aggressive Investor and Conservative Banker always renovate immediately
-        renovate_building(game, i, player_index);
-      } else if (player_id == 3) {
-        // Risk taker waits until absolutely forced (structural damage has happened, so forced to fix now to get rent back)
-        renovate_building(game, i, player_index);
-      } else if (player_id == 4) {
-        // Opportunistic Trader renovates if reserve is kept
-        double cost = prop->has_hotel ? prop->hotel_cost * 0.25 : prop->house_cost * 0.25;
-        if (game->players[player_index].money - cost >= 500) {
-          renovate_building(game, i, player_index);
-        }
-      }
-    }
-
-    // 2. Routine Maintenance
-    if (prop->building_condition < 100.0 && !prop->has_structural_damage && (prop->num_houses > 0 || prop->has_hotel)) {
-      if (player_id == 1 || player_id == 2) {
-        // Always maintains if possible
-        do_building_maintenance(game, i, player_index);
-      } else if (player_id == 3) {
-        // Risk taker completely ignores maintenance
-      } else if (player_id == 4) {
-        // Maintains if reserve > 500
-        double cost = prop->has_hotel ? prop->hotel_cost * 0.08 : (prop->house_cost * 0.05) * prop->num_houses;
-        if (game->players[player_index].money - cost >= 500) {
-          do_building_maintenance(game, i, player_index);
-        }
-      }
-    }
-
-    // 3. Property Renovation (Land)
-    if (prop->depreciation_pct > 0.0) {
-      if (player_id == 1) {
-        // Ignores land depreciation
-      } else if (player_id == 2 && prop->depreciation_pct >= 10.0) {
-        renovate_property(game, i, player_index);
-      } else if (player_id == 3 && prop->depreciation_pct >= 30.0) {
-        renovate_property(game, i, player_index);
-      } else if (player_id == 4 && prop->depreciation_pct >= 15.0) {
-        renovate_property(game, i, player_index);
-      }
-    }
-  }
-}
 

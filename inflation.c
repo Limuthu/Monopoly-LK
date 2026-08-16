@@ -3,8 +3,9 @@
 #include <stdlib.h>
 
 void handle_inflation(GameState *game) {
+
   // 1. Generate random inflation rate
-  // Possible rates: -3%, 0%, 2%, 5%, 8%, 12%
+  // rates: -3%, 0%, 2%, 5%, 8%, 12%
   int rates[] = {-3, 0, 2, 5, 8, 12};
   int num_rates = sizeof(rates) / sizeof(rates[0]);
   int random_index = rand() % num_rates;
@@ -13,7 +14,7 @@ void handle_inflation(GameState *game) {
   game->current_inflation_rate = (double)selected_rate_pct / 100.0;
   double multiplier = 1.0 + game->current_inflation_rate;
 
-  // 2. Map inflation to baseline interest rate (Table 9)
+  // 2. Map inflation to interest rate
   if (selected_rate_pct >= 8) {
     game->current_interest_rate = 0.12; // High Inflation
   } else if (selected_rate_pct >= 5) {
@@ -24,7 +25,7 @@ void handle_inflation(GameState *game) {
 
   // Announce the inflation cycle
   printf("\n======================================================\n");
-  printf("[INFLATION CYCLE] A new economic phase has begun!\n");
+  printf("INFLATION CYCLE A new economic phase has begun!\n");
   printf("Inflation Rate: %d%%\n", selected_rate_pct);
   printf("New Baseline Interest Rate: %.0lf%%\n", game->current_interest_rate * 100);
   printf("All property values, building costs, and rents have been adjusted.\n");
@@ -48,7 +49,6 @@ void handle_inflation(GameState *game) {
     }
   }
 
-  // 4. Apply compounding formula to global rent arrays
   for (int i = 0; i < 4; i++) {
     game->railway_rent_base[i] *= multiplier;
   }

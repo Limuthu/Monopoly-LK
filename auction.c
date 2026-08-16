@@ -1,16 +1,13 @@
 #include "types.h"
 #include <stdio.h>
 
-// Forward declarations
 int find_player_index(GameState *game, int player_id);
 void purchase_property(GameState *game, int player_index, int square_index);
 void purchase_railway(GameState *game, int player_index, int square_index);
 void purchase_utility(GameState *game, int player_index, int square_index);
 double get_dynamic_auction_start(GameState *game, int square_index);
 
-// =============================================================
-// HELPER: GET MARKET VALUE
-// =============================================================
+
 // Returns the listed price of any ownable square (property, railway, utility)
 
 double get_market_value(GameState *game, int square_index) {
@@ -24,27 +21,19 @@ double get_market_value(GameState *game, int square_index) {
   return 0;
 }
 
-// =============================================================
-// AI BIDDING STRATEGY
-// =============================================================
-// Returns the player's bid amount, or 0 to withdraw.
-// current_bid is the highest bid so far.
-// The minimum new bid = current_bid + 250 (Rule-LK 20).
-
-double decide_bid(GameState *game, int player_index, int square_index,
+double decide_bid(GameState *game, int player_index,
                   double current_bid, double market_value) {
 
   double new_bid = current_bid + 250;
   int player_id = game->players[player_index].id;
   double cash = game->players[player_index].money;
 
-  // Cannot bid more than cash on hand (Rule-LK 22)
+  // Cannot bid more than cash on hand 
   if (new_bid > cash) return 0;
 
-  // ---------------------------------------------------------
-  // Player 1 — Aggressive Investor
+  // Player 1 - Aggressive Investor
   // Bids aggressively up to 120% of market value
-  // ---------------------------------------------------------
+
   if (player_id == 1) {
     double max_bid = market_value * 1.20;
     if (new_bid <= max_bid && new_bid <= cash) {
@@ -53,11 +42,9 @@ double decide_bid(GameState *game, int player_index, int square_index,
     return 0;
   }
 
-  // ---------------------------------------------------------
-  // Player 2 — Conservative Banker
-  // Bargain hunter — exits above market value
-  // Also maintains 50% cash reserve after bidding
-  // ---------------------------------------------------------
+  // Player 2 - Conservative Banker
+  // Exits above market value Also maintains 50% cash reserve after bidding
+
   else if (player_id == 2) {
     if (new_bid <= market_value && new_bid <= cash * 0.5) {
       return new_bid;
@@ -65,10 +52,8 @@ double decide_bid(GameState *game, int player_index, int square_index,
     return 0;
   }
 
-  // ---------------------------------------------------------
-  // Player 3 — Risk Taker
-  // All-in — bids until cash is exhausted
-  // ---------------------------------------------------------
+  // Player 3 - Risk Taker All-in - bids until cash is exhausted
+
   else if (player_id == 3) {
     if (new_bid <= cash) {
       return new_bid;
@@ -76,11 +61,9 @@ double decide_bid(GameState *game, int player_index, int square_index,
     return 0;
   }
 
-  // ---------------------------------------------------------
-  // Player 4 — Opportunistic Trader
-  // Calculated — prefers discount buys (max 90% of market value)
+  // Player 4 - Opportunistic Trader prefers discount buys (max 90% of market value)
   // Maintains LKR 500 reserve
-  // ---------------------------------------------------------
+
   else if (player_id == 4) {
     double max_bid = market_value * 0.90;
     if (new_bid <= max_bid && (cash - new_bid) >= 500) {
@@ -92,16 +75,9 @@ double decide_bid(GameState *game, int player_index, int square_index,
   return 0;
 }
 
-// =============================================================
-// CORE AUCTION ENGINE
-// =============================================================
-// Run a round-robin auction for a single square.
-// triggering_player_id is the player who caused the auction
-// (e.g. the one who declined to buy).
+void run_auction(GameState *game, int square_index) {
 
-void run_auction(GameState *game, int square_index, int triggering_player_id) {
-
-  // Loan-locked properties cannot be auctioned (Rule-LK 3)
+  // Loan-locked properties cannot be auctioned 
   if (game->board[square_index].type == SQUARE_PROPERTY &&
       game->board[square_index].data.property.is_loan_locked) {
     return;
@@ -143,7 +119,7 @@ void run_auction(GameState *game, int square_index, int triggering_player_id) {
 
   // Need at least 1 bidder
   if (active_count == 0) {
-    printf("No eligible bidders — %s remains with the Bank\n",
+    printf("No eligible bidders - %s remains with the Bank\n",
            game->board[square_index].name);
     printf("========== AUCTION END ==========\n\n");
     return;
@@ -152,7 +128,6 @@ void run_auction(GameState *game, int square_index, int triggering_player_id) {
   int winning_player_index = -1;
   int rounds_with_no_new_bid = 0;
 
-  // Round-robin bidding loop
   while (active_count > 0) {
     int any_bid_this_round = 0;
 
@@ -164,7 +139,7 @@ void run_auction(GameState *game, int square_index, int triggering_player_id) {
         goto auction_done;
       }
 
-      double bid = decide_bid(game, i, square_index, current_bid, market_value);
+      double bid = decide_bid(game, i, current_bid, market_value);
 
       if (bid <= 0) {
         // Player withdraws permanently
@@ -183,7 +158,7 @@ void run_auction(GameState *game, int square_index, int triggering_player_id) {
             // Find the remaining bidder
             for (int j = 0; j < game->num_players; j++) {
               if (still_in[j]) {
-                double last_bid = decide_bid(game, j, square_index,
+                double last_bid = decide_bid(game, j,
                                              current_bid, market_value);
                 if (last_bid > 0) {
                   current_bid = last_bid;
@@ -211,7 +186,7 @@ void run_auction(GameState *game, int square_index, int triggering_player_id) {
       }
     }
 
-    // Safety: if a full rotation passed with no new bids, stop
+    // if a full rotation passed with no new bids, stop
     if (!any_bid_this_round) {
       rounds_with_no_new_bid++;
       if (rounds_with_no_new_bid >= 2) break;
@@ -242,12 +217,12 @@ auction_done:
           game->players[winning_player_index].id;
     }
 
-    printf("  >>> %s WINS the auction for %s at LKR %.0lf (saved LKR %.0lf)\n",
+    printf("%s WINS the auction for %s at LKR %.0lf (saved LKR %.0lf)\n",
            game->players[winning_player_index].name,
            game->board[square_index].name, current_bid,
            market_value - current_bid);
   } else {
-    printf("  No bids placed — %s remains with the Bank\n",
+    printf("No bids placed - %s remains with the Bank\n",
            game->board[square_index].name);
   }
 

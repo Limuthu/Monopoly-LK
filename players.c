@@ -3,8 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-// Forward declarations
-void run_auction(GameState *game, int square_index, int triggering_player_id);
+void run_auction(GameState *game, int square_index);
 
 // PLAYER INITIALIZATION
 
@@ -12,7 +11,7 @@ void init_players(GameState *game) {
 
   game->num_players = 4;
 
-  // Player 1 — Aggressive Investor
+  // Player 1 - Aggressive Investor
   game->players[0].id = 1;
   snprintf(game->players[0].name, sizeof(game->players[0].name),
            "Aggressive Investor");
@@ -27,7 +26,7 @@ void init_players(GameState *game) {
   game->players[0].loan_start_round = 0;
   game->players[0].is_bankrupt = 0;
 
-  // Player 2 — Conservative Banker
+  // Player 2 - Conservative Banker
   game->players[1].id = 2;
   snprintf(game->players[1].name, sizeof(game->players[1].name),
            "Conservative Banker");
@@ -42,7 +41,7 @@ void init_players(GameState *game) {
   game->players[1].loan_start_round = 0;
   game->players[1].is_bankrupt = 0;
 
-  // Player 3 — Risk Taker
+  // Player 3 - Risk Taker
   game->players[2].id = 3;
   snprintf(game->players[2].name, sizeof(game->players[2].name), "Risk Taker");
   game->players[2].money = 30000;
@@ -56,7 +55,7 @@ void init_players(GameState *game) {
   game->players[2].loan_start_round = 0;
   game->players[2].is_bankrupt = 0;
 
-  // Player 4 — Opportunistic Trader
+  // Player 4 - Opportunistic Trader
   game->players[3].id = 4;
   snprintf(game->players[3].name, sizeof(game->players[3].name),
            "Opportunistic Trader");
@@ -72,6 +71,7 @@ void init_players(GameState *game) {
   game->players[3].is_bankrupt = 0;
 
   for (int i = 0; i < game->num_players; i++) {
+    game->players[i].passed_go_this_round = 0;
     game->players[i].active_national_card = NATIONAL_CARD_NONE;
     game->players[i].national_card_rounds_left = 0;
     game->players[i].revalued_group = GROUP_NONE;
@@ -96,8 +96,6 @@ void reroll(Player *p1) {
 int has_tie(GameState *game) {
   for (int i = 0; i < game->num_players - 1; i++) {
     if (game->players[i].roll_result == game->players[i + 1].roll_result) {
-      /* printf("\nTie Between:\n%s & %s\n", game->players[i].name,
-              game->players[i + 1].name);*/
       return 1;
     }
   }
@@ -158,6 +156,7 @@ void move_player(GameState *game, int player_index, int dice_roll) {
          game->board[new_position].name, game->players[player_index].position);
   if (current_position > new_position && !game->players[player_index].in_jail) {
     game->players[player_index].money += 2000;
+    game->players[player_index].passed_go_this_round = 1;
     printf("%s passed Go and collected LKR 2000\n", game->players[player_index].name);
   }
 }
@@ -187,20 +186,11 @@ int is_regionally_buffed(GameState *game, int square_index) {
   return 0;
 }
 
-// =============================================================
+// PLAYER BUYING DECISIONS
 
 int should_buy(GameState *game, int player_id, int square_index) {
-
-  
-  int player_index = -1;
-  for (int i = 0; i < game->num_players; i++) {
-    if (game->players[i].id == player_id) {
-      player_index = i;
-      break;
-    }
-  }
+  int player_index = find_player_index(game, player_id);
   if (player_index == -1) return 0; 
-
 
   // Risk Taker
   if (player_id == 3) {
@@ -212,25 +202,27 @@ int should_buy(GameState *game, int player_id, int square_index) {
       purchase_property(game, player_index, square_index);
     }else if(game->players[player_index].money < game->board[square_index].data.property.price) {
       printf("%s cannot afford to buy this property\n", game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+      run_auction(game, square_index);
     }
 
     // Conservative Banker
   } else if (player_id == 2) {
+
+    // Priority 01 : Don't buy property in an economic recession event
+    // Priortiy 02 : Purchases properties only if at least 50% of current cash remains after purchase
+
     if (game->active_economic_event == EVENT_ECONOMIC_RECESSION) {
       printf("[Conservative Banker] Refusing to buy %s due to Economic Recession!\n", game->board[square_index].name);
-      run_auction(game, square_index, player_id);
+      run_auction(game, square_index);
       return 0;
     }
-
-    // Purchases properties only if at least 50% of current cash remains after purchase
 
     if (game->board[square_index].data.property.price <=
         game->players[player_index].money * 0.5) {
       purchase_property(game, player_index, square_index);
     }else if(game->board[square_index].data.property.price > game->players[player_index].money * 0.5){
       printf("%s cannot afford to buy this property\n", game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+      run_auction(game, square_index);
     }
 
     // Aggressive Investor
@@ -254,7 +246,7 @@ int should_buy(GameState *game, int player_id, int square_index) {
       printf("%s cannot afford to buy this property (Future rent covering "
              "mindset)\n",
              game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+      run_auction(game, square_index);
 
     } else if (owned + 1 == size) {
       purchase_property(game, player_index, square_index);
@@ -278,31 +270,26 @@ int should_buy(GameState *game, int player_id, int square_index) {
     // Property count in each group
     int size = group_size(game, square_index);
 
-    // Auction preference: bid only if auction price is below listed market
-    // value (i.e., the property went to auction at a discount). This is the
-    // core opportunistic behaviour — never overpay, always exploit undervalued
-    // lots.
 
-    // Priority 1 : Cannot afford (must keep a cash reserve >= 500 after
-    //              purchase to cover future rents) → skip
-    // Priority 2 : ROI is bad (base_rent / price < 7%) → skip
-    // Priority 3 : One property away from completing the color group → buy
-    // Priority 4 : Already owns 2+ properties in the group → buy
-    // Priority 5 : Property is too expensive (price > 5000) and none of the
-    //              above conditions apply → skip
-    // Priority 6 : Default — buy anything reasonably priced
+    // Priority 1 : If his money goes down to 500 after buying, he skips it.
+    // Priority 2: Purchases if regionally buffed
+    // Priority 3 : ROI is bad - skip
+    // Priority 4 : One property away from completing the color group - buy
+    // Priority 5 : Already owns 2+ properties in the group - buy
+    // Priority 6 : Property is too expensive (price > 5000) - skip
+    // Priority 7 : Default - buy anything reasonably priced
 
     if (game->players[player_index].money - game->board[square_index].data.property.price < 500) {
       printf("%s cannot afford to buy this property (reserve mindset)\n", game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+      run_auction(game, square_index);
     
     } else if (is_regionally_buffed(game, square_index)) {
-      printf("[Opportunistic Trader] Purchasing %s aggressively due to projected appreciation from Regional Development!\n", game->board[square_index].name);
+      printf("%s purchases %s due to projected appreciation from Regional Development!\n", game->players[player_index].name, game->board[square_index].name);
       purchase_property(game, player_index, square_index);
       
     } else if (game->board[square_index].data.property.base_rent * 100 < game->board[square_index].data.property.price * 7) {
       printf("%s skips: ROI is bad (rent/price ratio too low)\n", game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+      run_auction(game, square_index);
     
     } else if (owned + 1 == size) {
       purchase_property(game, player_index, square_index);
@@ -312,7 +299,7 @@ int should_buy(GameState *game, int player_id, int square_index) {
     
     } else if (game->board[square_index].data.property.price > 5000) {
       printf("%s skips: property too expensive with no color-group advantage\n", game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+      run_auction(game, square_index);
     
     } else {
       purchase_property(game, player_index, square_index);
@@ -330,49 +317,58 @@ int should_buy_railway(GameState *game, int player_id, int square_index) {
 
   double price = game->board[square_index].data.railway.price;
 
-  // Risk Taker — buys every railway he can afford
+  // Risk Taker - buys every railway he can afford
   if (player_id == 3) {
     if (game->players[player_index].money >= price) {
       purchase_railway(game, player_index, square_index);
     } else {
       printf("%s cannot afford to buy this railway\n", game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+      run_auction(game, square_index);
     }
 
-  // Conservative Banker — buys only if at least 50% cash remains
+  // Conservative Banker 
+  // Priority 1: If in economic recession he skips buying
+  // Priortiy 2 : buys only if at least 50% cash remains
   } else if (player_id == 2) {
     if (game->active_economic_event == EVENT_ECONOMIC_RECESSION) {
-      printf("[Conservative Banker] Refusing to buy railway %s due to Economic Recession!\n", game->board[square_index].name);
-      run_auction(game, square_index, player_id);
+      printf("%s Refusing to buy railway %s due to Economic Recession!\n",  game->players[player_index].name,game->board[square_index].name);
+      run_auction(game, square_index);
       return 0;
     }
     if (price <= game->players[player_index].money * 0.5) {
       purchase_railway(game, player_index, square_index);
     } else {
       printf("%s cannot afford to buy this railway\n", game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+      run_auction(game, square_index);
     }
 
-  // Aggressive Investor — always buys railways (steady rent income)
-  // as long as Rs.100 reserve is maintained
+  // Aggressive Investor - always buys railways as long as Rs.100 reserve is maintained
   } else if (player_id == 1) {
     if (game->players[player_index].money - price < 100) {
       printf("%s cannot afford to buy this railway (Future rent covering mindset)\n",
              game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+      run_auction(game, square_index);
     } else {
       purchase_railway(game, player_index, square_index);
     }
 
-  // Opportunistic Trader — buys railway if Rs.500 reserve is maintained, but aggressively buys if Railway Modernization is active
+  // Opportunistic Trader 
+  // Priority 1: If regulation active buys
+  // Priority 2: Buys railway if Rs.500 reserve is maintained
   } else if (player_id == 4) {
-    int reserve_needed = (game->active_regulation == REGULATION_RAILWAY_MODERNIZATION) ? 0 : 500;
-    if (game->players[player_index].money - price < reserve_needed) {
-      printf("%s cannot afford to buy this railway (reserve mindset)\n",
-             game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+
+    int reserve_needed;
+    if (game->active_regulation == REGULATION_RAILWAY_MODERNIZATION) {
+      reserve_needed = 0;
     } else {
-      if (reserve_needed == 0) printf("[Opportunistic Trader] Aggressively buying railway due to Railway Modernization!\n");
+      reserve_needed = 500;
+    }
+
+    if (game->players[player_index].money - price < reserve_needed) {
+      printf("%s cannot afford to buy this railway (reserve mindset)\n", game->players[player_index].name);
+      run_auction(game, square_index);
+    } else {
+      if (reserve_needed == 0) printf("%s buying railway due to Railway Modernization!\n", game->players[player_index].name);
       purchase_railway(game, player_index, square_index);
     }
   }
@@ -388,49 +384,52 @@ int should_buy_utility(GameState *game, int player_id, int square_index) {
 
   double price = game->board[square_index].data.utility.price;
 
-  // Risk Taker — buys every utility he can afford
+  // Risk Taker - buys every utility he can afford
   if (player_id == 3) {
     if (game->players[player_index].money >= price) {
       purchase_utility(game, player_index, square_index);
     } else {
       printf("%s cannot afford to buy this utility\n", game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+      run_auction(game, square_index);
     }
 
-  // Conservative Banker — buys only if at least 50% cash remains
+  // Conservative Banker - buys only if at least 50% cash remains
   } else if (player_id == 2) {
     if (game->active_economic_event == EVENT_ECONOMIC_RECESSION) {
-      printf("[Conservative Banker] Refusing to buy utility %s due to Economic Recession!\n", game->board[square_index].name);
-      run_auction(game, square_index, player_id);
+      printf("%s Refusing to buy utility %s due to Economic Recession!\n", game->players[player_index].name, game->board[square_index].name);
+      run_auction(game, square_index);
       return 0;
     }
     if (price <= game->players[player_index].money * 0.5) {
       purchase_utility(game, player_index, square_index);
     } else {
       printf("%s cannot afford to buy this utility\n", game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+      run_auction(game, square_index);
     }
 
-  // Aggressive Investor — always buys utilities (dice-multiplier income is strong)
-  // as long as Rs.100 reserve is maintained
+  // Aggressive Investor - always buys utilities (dice-multiplier income is strong) as long as Rs.100 reserve is maintained
   } else if (player_id == 1) {
     if (game->players[player_index].money - price < 100) {
-      printf("%s cannot afford to buy this utility (Future rent covering mindset)\n",
-             game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+      printf("%s cannot afford to buy this utility (Future rent covering mindset)\n", game->players[player_index].name);
+      run_auction(game, square_index);
     } else {
       purchase_utility(game, player_index, square_index);
     }
 
-  // Opportunistic Trader — buys utility if Rs.500 reserve is maintained, aggressively buys if Electricity Tariff Revision is active
+  // Opportunistic Trader - buys utility if Rs.500 reserve is maintained, aggressively buys if Electricity Tariff Revision is active
   } else if (player_id == 4) {
-    int reserve_needed = (game->active_regulation == REGULATION_ELECTRICITY_TARIFF) ? 0 : 500;
-    if (game->players[player_index].money - price < reserve_needed) {
-      printf("%s cannot afford to buy this utility (reserve mindset)\n",
-             game->players[player_index].name);
-      run_auction(game, square_index, player_id);
+    int reserve_needed;
+    if (game->active_regulation == REGULATION_ELECTRICITY_TARIFF) {
+      reserve_needed = 0;
     } else {
-      if (reserve_needed == 0) printf("[Opportunistic Trader] Aggressively buying utility due to Electricity Tariff Revision!\n");
+      reserve_needed = 500;
+    }
+
+    if (game->players[player_index].money - price < reserve_needed) {
+      printf("%s cannot afford to buy this utility (reserve mindset)\n", game->players[player_index].name);
+      run_auction(game, square_index);
+    } else {
+      if (reserve_needed == 0) printf("%s Aggressively buying utility due to Electricity Tariff Revision!\n", game->players[player_index].name);
       purchase_utility(game, player_index, square_index);
     }
   }

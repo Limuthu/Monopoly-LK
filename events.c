@@ -5,8 +5,12 @@
 // External function declarations
 double get_dynamic_rent(GameState *game, int square_index);
 double get_dynamic_price(GameState *game, int square_index);
+double get_dynamic_property_value(GameState *game, int square_index);
+int find_player_index(GameState *game, int player_id);
+const char* get_insurance_name(int tier);
 
-// Helper to get disaster name
+// ----NATURAL DISASTERS & REPAIRS----
+
 const char* get_disaster_name(DisasterType type) {
   switch (type) {
     case DISASTER_FIRE: return "Fire";
@@ -18,25 +22,8 @@ const char* get_disaster_name(DisasterType type) {
   }
 }
 
-// Helper to get insurance tier name
-const char* get_insurance_name(int tier) {
-  switch (tier) {
-    case 1: return "Basic Property Insurance";
-    case 2: return "Comprehensive Insurance";
-    case 3: return "Business Interruption Insurance";
-    default: return "Uninsured";
-  }
-}
-
-// Attempt to pay off disaster repair costs if player has cash
 void attempt_disaster_repairs(GameState *game, int player_id) {
-  int player_index = -1;
-  for (int i = 0; i < game->num_players; i++) {
-    if (game->players[i].id == player_id) {
-      player_index = i;
-      break;
-    }
-  }
+  int player_index = find_player_index(game, player_id);
   if (player_index == -1) return;
 
   for (int i = 0; i < TOTAL_SQUARES; i++) {
@@ -72,10 +59,6 @@ void attempt_disaster_repairs(GameState *game, int player_id) {
   }
 }
 
-// ----------------------------------------------------------------------------
-// DISASTER LOGIC
-// ----------------------------------------------------------------------------
-
 void trigger_disaster(GameState *game) {
   // Find all developed properties (has at least 1 house or hotel)
   int developed_squares[TOTAL_SQUARES];
@@ -102,27 +85,17 @@ void trigger_disaster(GameState *game) {
   int r = rand() % 100;
   
   if (game->active_economic_event == EVENT_HEAVY_MONSOON) {
-    // Flood becomes 50% chance
     if (r < 50) type = DISASTER_FLOOD;
     else type = (DisasterType)(rand() % 5); 
   } else if (game->active_economic_event == EVENT_POLITICAL_UNREST) {
-    // Riot probability doubles (usually 20%, so make it 40%)
     if (r < 40) type = DISASTER_RIOT;
     else type = (DisasterType)(rand() % 5);
   } else {
-    // Normal 20% each
     type = (DisasterType)(rand() % 5);
   }
   
   PropertyData *prop = &game->board[target_index].data.property;
-  int owner_idx = -1;
-  for (int i = 0; i < game->num_players; i++) {
-    if (game->players[i].id == prop->owner_id) {
-      owner_idx = i;
-      break;
-    }
-  }
-
+  int owner_idx = find_player_index(game, prop->owner_id);
   if (owner_idx == -1) return;
 
   // Calculate repair cost (50% of total built value)
@@ -130,7 +103,7 @@ void trigger_disaster(GameState *game) {
   double repair_cost = built_value * 0.50;
 
   printf("\n======================================================\n");
-  printf("[DISASTER] A %s has struck %s!\n", get_disaster_name(type), game->board[target_index].name);
+  printf("DISASTER A %s has struck %s!\n", get_disaster_name(type), game->board[target_index].name);
   printf("Total Repair Cost: LKR %.0lf\n", repair_cost);
 
   // Determine coverage
@@ -139,21 +112,18 @@ void trigger_disaster(GameState *game) {
 
   if (prop->is_insured && prop->insurance_rounds_left > 0) {
     if (prop->insurance_tier == 1) {
-      // Basic covers Fire, Flood
       if (type == DISASTER_FIRE || type == DISASTER_FLOOD) {
         is_covered = 1;
-        compensation = repair_cost * 0.80; // 80% payout
+        compensation = repair_cost * 0.80;
       }
     } else if (prop->insurance_tier == 2) {
-      // Comprehensive covers all
       is_covered = 1;
-      compensation = repair_cost * 1.00; // 100% payout
+      compensation = repair_cost * 1.00;
     } else if (prop->insurance_tier == 3) {
-      // Bus Interruption covers all + rent
       is_covered = 1;
       int rent_rounds = 5;
       if (game->active_economic_event == EVENT_POLITICAL_UNREST) {
-        rent_rounds = 10; // Claims increase
+        rent_rounds = 10;
       }
       compensation = repair_cost * 1.00 + (get_dynamic_rent(game, target_index) * rent_rounds);
     }
@@ -163,7 +133,6 @@ void trigger_disaster(GameState *game) {
     printf("Insurance (%s) covers the disaster!\n", get_insurance_name(prop->insurance_tier));
     printf("Payout credited to %s: LKR %.0lf\n", game->players[owner_idx].name, compensation);
     
-    // Set pending payout to act as receivable
     prop->pending_insurance_payout = compensation;
     game->players[owner_idx].insurance_claims_receivable += compensation;
   } else {
@@ -178,7 +147,6 @@ void trigger_disaster(GameState *game) {
   if (game->players[owner_idx].money >= repair_cost) {
     game->players[owner_idx].money -= repair_cost;
     
-    // Reset maintenance state
     if (prop->has_structural_damage) {
       prop->price /= 0.85;
       prop->base_rent /= 0.75;
@@ -189,7 +157,6 @@ void trigger_disaster(GameState *game) {
 
     printf("%s paid the repair cost. The property remains fully functional.\n", game->players[owner_idx].name);
   } else {
-    // Cannot afford!
     prop->is_damaged = 1;
     prop->pending_repair_cost = repair_cost;
     printf(">> WARNING: %s cannot afford the repair! %s is damaged and cannot collect rent until repaired.\n",
@@ -198,115 +165,188 @@ void trigger_disaster(GameState *game) {
   printf("======================================================\n\n");
 }
 
-// ----------------------------------------------------------------------------
-// INSURANCE LOGIC
-// ----------------------------------------------------------------------------
+// ECONOMIC EVENTS
 
-void update_insurance_durations(GameState *game) {
-  for (int i = 0; i < TOTAL_SQUARES; i++) {
-    if (game->board[i].type == SQUARE_PROPERTY) {
-      PropertyData *prop = &game->board[i].data.property;
-      if (prop->is_insured && prop->insurance_rounds_left > 0) {
-        prop->insurance_rounds_left--;
+const char* get_economic_event_name(EconomicEventType type) {
+  switch (type) {
+    case EVENT_TOURISM_BOOM: return "Tourism Boom";
+    case EVENT_FUEL_CRISIS: return "Fuel Crisis";
+    case EVENT_HEAVY_MONSOON: return "Heavy Monsoon";
+    case EVENT_ECONOMIC_RECESSION: return "Economic Recession";
+    case EVENT_STOCK_MARKET_BOOM: return "Stock Market Boom";
+    case EVENT_GOV_HOUSING: return "Government Housing Programme";
+    case EVENT_FOREIGN_INVESTMENT: return "Foreign Investment";
+    case EVENT_POLITICAL_UNREST: return "Political Unrest";
+    default: return "None";
+  }
+}
 
-        if (prop->insurance_rounds_left == 3) {
-          int owner_idx = -1;
-          for (int p = 0; p < game->num_players; p++) {
-            if (game->players[p].id == prop->owner_id) {
-              owner_idx = p;
-              break;
-            }
+void trigger_economic_event(GameState *game) {
+  game->active_economic_event = (EconomicEventType)((rand() % 8) + 1);
+  game->economic_event_rounds_left = 15;
+
+  printf("\n======================================================\n");
+  printf("ECONOMIC EVENT A new national economic phase has begun!\n");
+  printf("ACTIVE EVENT: %s\n", get_economic_event_name(game->active_economic_event));
+  
+  switch (game->active_economic_event) {
+    case EVENT_TOURISM_BOOM:
+      printf("Hotel rent x2\n");
+      printf("Southern Coastal Properties (Yellow) Value +15%%\n");
+      break;
+    case EVENT_FUEL_CRISIS:
+      printf("Railway rent x2\n");
+      printf("Property Development Costs +20%%\n");
+      break;
+    case EVENT_HEAVY_MONSOON:
+      printf("Flood Disaster probability increased\n");
+      printf("Global Insurance Premiums +50%%\n");
+      printf("Coastal Properties Value -10%%\n");
+      break;
+    case EVENT_ECONOMIC_RECESSION:
+      printf("Global Property Values -15%%\n");
+      printf("Global Rental Incomes -10%%\n");
+      printf("Prevailing Loan Interest Rate +15%%\n");
+      break;
+    case EVENT_STOCK_MARKET_BOOM:
+      printf("Global Property Values +10%%\n");
+      printf("Prevailing Loan Interest Rate -10%%\n");
+      break;
+    case EVENT_GOV_HOUSING:
+      printf("House Construction Costs -25%%\n");
+      break;
+    case EVENT_FOREIGN_INVESTMENT:
+      printf("Commercial Properties Value +20%%\n");
+      break;
+    case EVENT_POLITICAL_UNREST:
+      printf("Riot Disaster probability x2\n");
+      printf("Hotel rent drops 50%%\n");
+      printf("Business Interruption claims increased\n");
+      break;
+    default:
+      break;
+  }
+  printf("======================================================\n\n");
+}
+
+// 3. GOVERNMENT REGULATIONS
+
+const char* get_government_regulation_name(GovernmentRegulationType type) {
+  switch (type) {
+    case REGULATION_INCREASE_PROPERTY_TAX: return "Increase Property Tax";
+    case REGULATION_REDUCE_LOAN_INTEREST: return "Reduce Loan Interest";
+    case REGULATION_HOUSING_SUBSIDY: return "Housing Subsidy";
+    case REGULATION_LUXURY_PROPERTY_TAX: return "Luxury Property Tax";
+    case REGULATION_RAILWAY_MODERNIZATION: return "Railway Modernization";
+    case REGULATION_ELECTRICITY_TARIFF: return "Electricity Tariff Revision";
+    case REGULATION_INSURANCE_REGULATION: return "Insurance Regulation";
+    case REGULATION_ANTI_SPECULATION: return "Anti-Speculation Act";
+    default: return "None";
+  }
+}
+
+void trigger_government_regulation(GameState *game) {
+  game->active_regulation = (GovernmentRegulationType)((rand() % 8) + 1);
+  game->regulation_rounds_left = 20;
+
+  printf("\n======================================================\n");
+  printf("GOVERNMENT REGULATION The Sri Lankan Government has announced a new regulation!\n");
+  printf("New Regulation: %s\n", get_government_regulation_name(game->active_regulation));
+
+  // Handle immediate effects
+  if (game->active_regulation == REGULATION_LUXURY_PROPERTY_TAX) {
+    printf("  -> Immediate 25%% tax on all luxury properties (hotels)!\n");
+    for (int i = 0; i < TOTAL_SQUARES; i++) {
+      if (game->board[i].type == SQUARE_PROPERTY && game->board[i].data.property.has_hotel) {
+        int owner_id = game->board[i].data.property.owner_id;
+        if (owner_id != -1) {
+          int owner_index = find_player_index(game, owner_id);
+          if (owner_index != -1) {
+            double property_value = get_dynamic_property_value(game, i);
+            double tax = property_value * 0.25;
+            game->players[owner_index].money -= tax;
+            printf("  -> %s paid LKR %.0lf tax for hotel on %s.\n", game->players[owner_index].name, tax, game->board[i].name);
           }
-          if (owner_idx != -1) {
-            printf("[INSURANCE EXPIRING] %s's policy on %s expires in 3 rounds!\n",
-                   game->players[owner_idx].name, game->board[i].name);
-          }
-        } else if (prop->insurance_rounds_left == 0) {
-          prop->is_insured = 0;
-          prop->insurance_tier = 0;
         }
       }
     }
   }
+
+  printf("======================================================\n\n");
 }
 
-// Helper to buy policy
-static void buy_insurance(GameState *game, int player_index, int square_index, int tier) {
-  double value = get_dynamic_price(game, square_index);
-  double premium = 0;
+// REGIONAL DEVELOPMENT CARDS
+
+const char* get_regional_card_name(RegionalCardType type) {
+  switch (type) {
+    case CARD_SOUTHERN_TOURISM_BOOM: return "Southern Tourism Boom";
+    case CARD_PORT_CITY_EXPANSION: return "Port City Expansion";
+    case CARD_IT_INDUSTRY_GROWTH: return "IT Industry Growth";
+    case CARD_NORTHERN_DEV_PROGRAMME: return "Northern Development Programme";
+    case CARD_TEA_EXPORT_BOOM: return "Tea Export Boom";
+    case CARD_AIRPORT_EXPANSION: return "Airport Expansion";
+    case CARD_UNIVERSITY_CITY_GROWTH: return "University City Growth";
+    case CARD_BEACH_POLLUTION: return "Beach Pollution";
+    case CARD_FLOOD_DAMAGE: return "Flood Damage";
+    case CARD_TRANSPORT_STRIKE: return "Transport Strike";
+    case CARD_ELECTRICITY_TARIFF: return "Electricity Tariff Increase";
+    case CARD_WATER_SHORTAGE: return "Water Shortage";
+    default: return "None";
+  }
+}
+
+void trigger_regional_development(GameState *game) {
+  game->active_regional_card = (RegionalCardType)((rand() % 12) + 1);
+  game->regional_card_rounds_left = 15;
+
+  printf("\n======================================================\n");
+  printf("REGIONAL DEVELOPMENT A new regional development card has been drawn!\n");
+  printf("ACTIVE CARD: %s\n", get_regional_card_name(game->active_regional_card));
   
-  if (tier == 1) premium = value * 0.05;
-  else if (tier == 2) premium = value * 0.10;
-  else if (tier == 3) premium = value * 0.15;
-  
-  if (game->active_economic_event == EVENT_HEAVY_MONSOON) {
-    premium *= 1.50; // Global Insurance Premiums +50%
+  switch (game->active_regional_card) {
+    case CARD_SOUTHERN_TOURISM_BOOM:
+      printf("Galle Fort, Unawatuna and Hikkaduwa rental income +40%%\n");
+      break;
+    case CARD_PORT_CITY_EXPANSION:
+      printf("Pettah, Maradana and Colombo Fort Station values +25%%\n");
+      break;
+    case CARD_IT_INDUSTRY_GROWTH:
+      printf("Maharagama, Nugegoda and Kottawa values +20%%\n");
+      break;
+    case CARD_NORTHERN_DEV_PROGRAMME:
+      printf("Jaffna Town, Nallur and Trincomalee values +30%%\n");
+      break;
+    case CARD_TEA_EXPORT_BOOM:
+      printf("Nuwara Eliya value +35%%\n");
+      break;
+    case CARD_AIRPORT_EXPANSION:
+      printf("Negombo, Katunayake and Ja-Ela rents +30%%\n");
+      break;
+    case CARD_UNIVERSITY_CITY_GROWTH:
+      printf("Peradeniya and Kandy City values +20%%\n");
+      break;
+    case CARD_BEACH_POLLUTION:
+      printf("Southern coastal rents -30%%\n");
+      break;
+    case CARD_FLOOD_DAMAGE:
+      printf("Low-lying coastal properties lose 20%% value\n");
+      break;
+    case CARD_TRANSPORT_STRIKE:
+      printf("Railway revenue reduced by 40%%\n");
+      break;
+    case CARD_ELECTRICITY_TARIFF:
+      printf("Utility rent +25%%\n");
+      break;
+    case CARD_WATER_SHORTAGE:
+      printf("Water utility revenue +20%%; surrounding properties -10%%\n");
+      break;
+    default:
+      break;
   }
-
-  if (game->players[player_index].active_national_card == NATIONAL_CARD_INSURANCE_DISCOUNT) {
-    premium *= 0.80; // 20% discount
-  }
-
-  if (game->active_regulation == REGULATION_INSURANCE_REGULATION) {
-    premium *= 0.85; // 15% discount
-  }
-
-  if (game->players[player_index].money >= premium) {
-    game->players[player_index].money -= premium;
-    game->board[square_index].data.property.is_insured = 1;
-    game->board[square_index].data.property.insurance_tier = tier;
-    game->board[square_index].data.property.insurance_rounds_left = 20;
-
-    printf("[INSURANCE PURCHASE] %s bought %s for %s (Premium: LKR %.0lf)\n",
-           game->players[player_index].name, get_insurance_name(tier), 
-           game->board[square_index].name, premium);
-  }
+  printf("======================================================\n\n");
 }
 
-// Triggered when landing on square 17 or 33
-void handle_insurance_landing(GameState *game, int player_index) {
-  int player_id = game->players[player_index].id;
-  printf("%s visited the Insurance Company.\n", game->players[player_index].name);
-
-  for (int i = 0; i < TOTAL_SQUARES; i++) {
-    if (game->board[i].type == SQUARE_PROPERTY && game->board[i].owner_id == player_id) {
-      PropertyData *prop = &game->board[i].data.property;
-      
-      // Skip if already insured
-      if (prop->is_insured && prop->insurance_rounds_left > 0) continue;
-      
-      // Skip undeveloped
-      if (prop->num_houses == 0 && !prop->has_hotel) continue;
-
-      double val = get_dynamic_price(game, i);
-
-      // AI Logic
-      if (player_id == 1) { // Aggressive Investor
-        if (prop->has_hotel) buy_insurance(game, player_index, i, 2); // Buys Comp for hotels
-        else buy_insurance(game, player_index, i, 1);                 // Buys Basic for houses
-      } 
-      else if (player_id == 2) { // Conservative Banker
-        buy_insurance(game, player_index, i, 2); // Highly cautious, buys Comp for all
-      }
-      else if (player_id == 3) { // Risk Taker
-        // Refuses to buy insurance until after suffered a financial loss
-        if (prop->is_damaged) {
-          buy_insurance(game, player_index, i, 1);
-        }
-      }
-      else if (player_id == 4) { // Opportunistic Trader
-        // Only buys Comp for high value (> 5000)
-        if (val >= 5000) {
-          buy_insurance(game, player_index, i, 2);
-        }
-      }
-    }
-  }
-}
-
-// ----------------------------------------------------------------------------
-// NATIONAL EVENT CARDS LOGIC
-// ----------------------------------------------------------------------------
+// --- NATIONAL EVENT CARDS ----
 
 void init_national_deck(GameState *game) {
   NationalEventCardType temp_deck[20] = {
@@ -332,7 +372,6 @@ void init_national_deck(GameState *game) {
     NATIONAL_CARD_NATIONAL_DISASTER
   };
   
-  // Shuffle the deck deterministically for the game instance
   for (int i = 19; i > 0; i--) {
     int j = rand() % (i + 1);
     NationalEventCardType temp = temp_deck[i];
@@ -379,14 +418,10 @@ void draw_national_card(GameState *game, int player_index) {
   printf("\n--- %s draws a National Event Card! ---\n", p->name);
   printf("Card: %s\n", get_national_card_name(card));
   
-  // Advance deck index
   game->national_deck_index = (game->national_deck_index + 1) % 20;
-  
-  int is_instant = 0;
   
   switch (card) {
     case NATIONAL_CARD_HEAVY_FLOODS: {
-      is_instant = 1;
       int coastal_props[40];
       int count = 0;
       for (int i = 0; i < TOTAL_SQUARES; i++) {
@@ -401,12 +436,12 @@ void draw_national_card(GameState *game, int player_index) {
         int target = coastal_props[rand() % count];
         PropertyData *prop = &game->board[target].data.property;
         double repair_cost = ((prop->house_cost * prop->num_houses) + (prop->hotel_cost * prop->has_hotel)) * 0.50;
-        if (repair_cost == 0) repair_cost = prop->price * 0.20; // fallback if undeveloped
+        if (repair_cost == 0) repair_cost = prop->price * 0.20; 
         prop->is_damaged = 1;
         prop->pending_repair_cost = repair_cost;
-        printf("[EVENT] Heavy Floods! %s is damaged. Repair cost: LKR %.0lf\n", game->board[target].name, repair_cost);
+        printf("EVENT Heavy Floods! %s is damaged. Repair cost: LKR %.0lf\n", game->board[target].name, repair_cost);
       } else {
-        printf("[EVENT] Heavy Floods! But %s owns no coastal properties.\n", p->name);
+        printf("EVENT Heavy Floods! But %s owns no coastal properties.\n", p->name);
       }
       break;
     }
@@ -429,15 +464,14 @@ void draw_national_card(GameState *game, int player_index) {
         } else if (game->board[target].type == SQUARE_UTILITY) {
             game->board[target].data.utility.closed_rounds_left = 2;
         }
-        printf("[EVENT] Political Rally! %s is closed for 2 rounds.\n", game->board[target].name);
+        printf("EVENT Political Rally! %s is closed for 2 rounds.\n", game->board[target].name);
       } else {
-        printf("[EVENT] Political Rally! But %s owns no properties.\n", p->name);
+        printf("EVENT Political Rally! But %s owns no properties.\n", p->name);
       }
       break;
     }
     case NATIONAL_CARD_TAX_AMNESTY: {
-      is_instant = 1;
-      printf("[EVENT] Tax Amnesty! Each player receives LKR 2,000.\n");
+      printf("EVENT Tax Amnesty! Each player receives LKR 2,000.\n");
       for (int i = 0; i < game->num_players; i++) {
         if (!game->players[i].is_bankrupt) {
           game->players[i].money += 2000;
@@ -446,7 +480,6 @@ void draw_national_card(GameState *game, int player_index) {
       break;
     }
     case NATIONAL_CARD_GOVERNMENT_GRANT: {
-      is_instant = 1;
       int count_active = 0;
       for (int i = 0; i < game->num_players; i++) {
         if (!game->players[i].is_bankrupt) count_active++;
@@ -463,13 +496,12 @@ void draw_national_card(GameState *game, int player_index) {
           }
           if (target != -1) {
               game->players[target].money += 5000;
-              printf("[EVENT] Government Grant! %s receives LKR 5,000.\n", game->players[target].name);
+              printf("EVENT Government Grant! %s receives LKR 5,000.\n", game->players[target].name);
           }
       }
       break;
     }
     case NATIONAL_CARD_NATIONAL_DISASTER: {
-      is_instant = 1;
       int dev_props[40];
       int count = 0;
       for (int i = 0; i < TOTAL_SQUARES; i++) {
@@ -485,9 +517,9 @@ void draw_national_card(GameState *game, int player_index) {
         double repair_cost = ((prop->house_cost * prop->num_houses) + (prop->hotel_cost * prop->has_hotel)) * 0.50;
         prop->is_damaged = 1;
         prop->pending_repair_cost = repair_cost;
-        printf("[EVENT] National Disaster! %s is damaged. Repair cost: LKR %.0lf\n", game->board[target].name, repair_cost);
+        printf("EVENT National Disaster! %s is damaged. Repair cost: LKR %.0lf\n", game->board[target].name, repair_cost);
       } else {
-        printf("[EVENT] National Disaster! But %s has no developed properties.\n", p->name);
+        printf("EVENT National Disaster! But %s has no developed properties.\n", p->name);
       }
       break;
     }
@@ -510,10 +542,10 @@ void draw_national_card(GameState *game, int player_index) {
       }
       if (count > 0) {
           p->revalued_group = owned_groups[rand() % count];
-          printf("[EVENT] Property Revaluation! One of %s's property groups appreciates by 15%% for 15 rounds.\n", p->name);
+          printf("EVENT Property Revaluation! One of %s's property groups appreciates by 15%% for 15 rounds.\n", p->name);
       } else {
           p->revalued_group = GROUP_NONE;
-          printf("[EVENT] Property Revaluation! But %s owns no properties.\n", p->name);
+          printf("EVENT Property Revaluation! But %s owns no properties.\n", p->name);
       }
       break;
     }
@@ -529,7 +561,7 @@ void draw_national_card(GameState *game, int player_index) {
       } else {
           p->national_card_rounds_left = 15;
       }
-      printf("[EVENT] %s modifier applies for %d rounds.\n", get_national_card_name(card), p->national_card_rounds_left);
+      printf("EVENT %s modifier applies for %d rounds.\n", get_national_card_name(card), p->national_card_rounds_left);
       break;
     }
   }
